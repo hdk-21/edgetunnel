@@ -4364,7 +4364,7 @@ async function bestIP(request, env, txt = 'ADD.txt') {
                     
                     // 生成显示格式
                     const typeText = result.type === 'official' ? '官方优选' : '反代优选';
-                    const display = \`\${parsedIP.host}:\${parsedIP.port}#\${locationCode} \${typeText} \${result.latency}ms\`;
+                    const display = \`\${parsedIP.host}:\${parsedIP.port}#\${locationCode} \${typeText} \${parsedIP.host} \${result.latency}ms\`;
                     
                     return {
                         ip: parsedIP.host,
@@ -7175,4 +7175,5 @@ function config_Html(token = "test", proxyhost = "") {
 </html>`;
 
     return html;
+
 }
