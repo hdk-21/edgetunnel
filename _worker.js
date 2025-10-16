@@ -3251,7 +3251,7 @@ async function bestIP(request, env, txt = 'ADD.txt') {
     async function GetCFIPs(ipSource = 'official', targetPort = '443') {
         try {
             let response;
-            if (ipSource === 'as13335') {
+			if (ipSource === 'as13335') {
                 // AS13335列表
                 response = await fetch('https://raw.githubusercontent.com/ipverse/asn-ip/master/as/13335/ipv4-aggregated.txt');
             } else if (ipSource === 'as209242') {
@@ -3260,6 +3260,12 @@ async function bestIP(request, env, txt = 'ADD.txt') {
             } else if (ipSource === 'as24429') {
                 // AS24429列表
                 response = await fetch('https://raw.githubusercontent.com/ipverse/asn-ip/master/as/24429/ipv4-aggregated.txt');
+            } else if (ipSource === 'as132203') {
+                // AS132203列表
+                response = await fetch('https://raw.githubusercontent.com/ipverse/asn-ip/master/as/132203/ipv4-aggregated.txt');
+            } else if (ipSource === 'as16509') {
+                // AS16509列表
+                response = await fetch('https://raw.githubusercontent.com/ipverse/asn-ip/master/as/16509/ipv4-aggregated.txt');
             } else if (ipSource === 'as35916') {
                 // AS35916列表
                 response = await fetch('https://raw.githubusercontent.com/ipverse/asn-ip/master/as/35916/ipv4-aggregated.txt');
@@ -3273,7 +3279,6 @@ async function bestIP(request, env, txt = 'ADD.txt') {
                 // 反代IP列表 (直接IP，非CIDR)
                 response = await fetch('https://raw.githubusercontent.com/cmliu/ACL4SSR/main/baipiao.txt');
                 const text = response.ok ? await response.text() : '';
-
                 // 解析并过滤符合端口的IP
                 const allLines = text.split('\n')
                     .map(line => line.trim())
@@ -4001,10 +4006,12 @@ async function bestIP(request, env, txt = 'ADD.txt') {
             <select id="ip-source-select">
                 <option value="official">CF官方列表</option>
                 <option value="cm">CM整理列表</option>
-                <option value="as13335">AS13335列表</option>
-                <option value="as209242">AS209242列表</option>
-                <option value="as24429">AS24429列表(Alibaba)</option>
-                <option value="as199524">AS199524列表(G-Core)</option>
+                <option value="as13335">AS13335列表（Cloudflare）</option>
+                <option value="as132203">AS132203列表（腾讯）</option>
+                <option value="as16509">AS132203列表（Amazon）</option>
+                <option value="as209242">AS209242列表（Cloudflare）</option>
+                <option value="as24429">AS24429列表（Alibaba）</option>
+                <option value="as199524">AS199524列表（G-Core）</option>
                 <option value="proxyip">反代IP列表</option>
             </select>
 
@@ -4625,6 +4632,12 @@ async function bestIP(request, env, txt = 'ADD.txt') {
                     break;
                 case 'as24429':
                     ipSourceName = 'Alibaba';
+                    break;
+				case 'as132203':
+                    ipSourceName = '腾讯';
+                    break;
+				case 'as16509':
+                    ipSourceName = 'Amazon';
                     break;
                 case 'as199524':
                     ipSourceName = 'G-Core';
@@ -7177,3 +7190,4 @@ function config_Html(token = "test", proxyhost = "") {
     return html;
 
 }
+
