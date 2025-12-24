@@ -47,6 +47,7 @@ export default {
                         const 响应 = new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
                         响应.headers.set('Set-Cookie', `auth=${await MD5MD5(UA + 加密秘钥 + 管理员密码)}; Path=/; Max-Age=86400; HttpOnly`);
                         return 响应;
+
                     }
                 }
                 return fetch(Pages静态页面 + '/login');
@@ -274,7 +275,6 @@ export default {
                                 return new Response('优选订阅生成器异常：' + error.message, { status: 403 });
                             }
                         }
-
                         订阅内容 = 其他节点LINK + 完整优选IP.map(原始地址 => {
                             // 统一正则: 匹配 域名/IPv4/IPv6地址 + 可选端口 + 可选备注
                             // 示例: 
@@ -1578,4 +1578,3 @@ async function html1101(host, 访问IP) {
 </body>
 </html>`;
 }
-
