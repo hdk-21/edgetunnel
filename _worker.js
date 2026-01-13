@@ -598,7 +598,7 @@ async function forwardataTCP(host, portNum, rawData, ws, respHeader, remoteConnW
 
 async function forwardataudp(udpChunk, webSocket, respHeader) {
     try {
-        const tcpSocket = connect({ hostname: '8.8.4.4', port: 53 });
+        const tcpSocket = connect({ hostname: '149.112.112.112', port: 53 });
         let vlessHeader = respHeader;
         const writer = tcpSocket.writable.getWriter();
         await writer.write(udpChunk);
@@ -1795,4 +1795,5 @@ async function html1101(host, 访问IP) {
 </body>
 </html>`;
 }
+
 
