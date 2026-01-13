@@ -597,30 +597,40 @@ async function forwardataTCP(host, portNum, rawData, ws, respHeader, remoteConnW
 }
 
 async function forwardataudp(udpChunk, webSocket, respHeader) {
-    try {
-        const tcpSocket = connect({ hostname: '149.112.112.112', port: 53 });
-        let vlessHeader = respHeader;
-        const writer = tcpSocket.writable.getWriter();
-        await writer.write(udpChunk);
-        writer.releaseLock();
-        await tcpSocket.readable.pipeTo(new WritableStream({
-            async write(chunk) {
-                if (webSocket.readyState === WebSocket.OPEN) {
-                    if (vlessHeader) {
-                        const response = new Uint8Array(vlessHeader.length + chunk.byteLength);
-                        response.set(vlessHeader, 0);
-                        response.set(chunk, vlessHeader.length);
-                        webSocket.send(response.buffer);
-                        vlessHeader = null;
-                    } else {
-                        webSocket.send(chunk);
-                    }
-                }
-            },
-        }));
-    } catch (error) {
-        // console.error('UDP forward error:', error);
-    }
+	try {
+	    const dohUrl = 'https://dns.quad9.net/dns-query';
+	
+	    const response = await fetch(dohUrl, {
+	        method: 'POST',
+	        headers: {
+	            'Accept': 'application/dns-message',
+	            'Content-Type': 'application/dns-message',
+	            // 'Host': 'dns.quad9.net' 
+	        },
+	        body: udpChunk,
+	    });
+	
+	    if (response.ok) {
+	        const dnsReply = await response.arrayBuffer();
+	        const replyChunk = new Uint8Array(dnsReply);
+	
+	        if (webSocket.readyState === WebSocket.OPEN) {
+	            if (vlessHeader) {
+	                const completeResponse = new Uint8Array(vlessHeader.length + replyChunk.byteLength);
+	                completeResponse.set(vlessHeader, 0);
+	                completeResponse.set(replyChunk, vlessHeader.length);
+	                webSocket.send(completeResponse.buffer);
+	                vlessHeader = null; 
+	            } else {
+	                webSocket.send(replyChunk.buffer);
+	            }
+	        }
+	    } else {
+	        console.error('Quad9 DoH Status:', response.status);
+	    }
+	} catch (error) {
+	    // console.error('UDP over DoH Error:', error);
+	}
 }
 
 function closeSocketQuietly(socket) {
@@ -1795,5 +1805,6 @@ async function html1101(host, 访问IP) {
 </body>
 </html>`;
 }
+
 
 
