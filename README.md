@@ -1,10 +1,7 @@
 # 🚀 edgetunnel 2.0
 ![后台页面](./img.png)
 
-- **Edgetunnel 图文教程**：https://cmliussss.com/p/edt2 ***必看内容!必看内容!必看内容!!!***
-- **报错 Error 1101 详解**：https://www.youtube.com/watch?v=r4uVTEJptdE
-
-- Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
+- **Edgetunnel 图文教程**：https://cmliussss.com/p/edt2
 
 ## ⚠️ 免责声明
 
