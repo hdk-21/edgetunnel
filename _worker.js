@@ -599,7 +599,7 @@ async function forwardataTCP(host, portNum, rawData, ws, respHeader, remoteConnW
 
 async function forwardataudp(udpChunk, webSocket, respHeader) {
 	try {
-	    const dohUrl = 'https://dns.quad9.net/dns-query';
+	    const dohUrl = 'https://dns11.quad9.net/dns-query';
 	    let vlessHeader = respHeader;
 	    const response = await fetch(dohUrl, {
 	        method: 'POST',
@@ -2009,6 +2009,7 @@ async function html1101(host, 访问IP) {
 </body>
 </html>`;
 }
+
 
 
 
