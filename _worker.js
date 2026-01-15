@@ -378,7 +378,7 @@ async function 处理WS请求(request, yourUUID) {
     let 判断是否是木马 = null;
     readable.pipeTo(new WritableStream({
         async write(chunk) {
-            if (isDnsQuery) return await forwardataudp(chunk, serverSock, null);
+            if (isDnsQuery) return await forwarddnsdataudp(chunk, serverSock, null);
             if (remoteConnWrapper.socket) {
                 const writer = remoteConnWrapper.socket.writable.getWriter();
                 await writer.write(chunk);
@@ -411,7 +411,7 @@ async function 处理WS请求(request, yourUUID) {
                 }
                 const respHeader = new Uint8Array([version[0], 0]);
                 const rawData = chunk.slice(rawIndex);
-                if (isDnsQuery) return forwardataudp(rawData, serverSock, respHeader);
+                if (isDnsQuery) return forwarddnsdataudp(rawData, serverSock, respHeader);
                 await forwardataTCP(hostname, port, rawData, serverSock, respHeader, remoteConnWrapper, yourUUID);
             }
         },
@@ -597,7 +597,7 @@ async function forwardataTCP(host, portNum, rawData, ws, respHeader, remoteConnW
     }
 }
 
-async function forwardataudp(udpChunk, webSocket, respHeader) {
+async function forwarddnsdataudp(udpChunk, webSocket, respHeader) {
 	try {
 	    const dohUrl = 'https://dns11.quad9.net/dns-query';
 	    let vlessHeader = respHeader;
@@ -2009,6 +2009,7 @@ async function html1101(host, 访问IP) {
 </body>
 </html>`;
 }
+
 
 
 
