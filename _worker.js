@@ -406,7 +406,7 @@ async function 处理WS请求(request, yourUUID) {
                 const { port, hostname, rawIndex, version, isUDP } = 解析魏烈思请求(chunk, yourUUID);
                 if (isSpeedTestSite(hostname)) throw new Error('Speedtest site is blocked');
                 if (isUDP) {
-                    if (port === 53) isDnsQuery = true;
+                    if (port === 53 || port === 9953) isDnsQuery = true;
                     else throw new Error('UDP is not supported');
                 }
                 const respHeader = new Uint8Array([version[0], 0]);
@@ -2025,6 +2025,7 @@ async function html1101(host, 访问IP) {
 </body>
 </html>`;
 }
+
 
 
 
