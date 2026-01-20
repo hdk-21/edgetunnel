@@ -2,7 +2,7 @@
 let config_JSON, 反代IP = '', 启用SOCKS5反代 = null, 启用SOCKS5全局反代 = false, 我的SOCKS5账号 = '', parsedSocks5Address = {};
 let 缓存反代IP, 缓存反代解析数组, 缓存反代数组索引 = 0, 启用反代兜底 = true, ECH_DOH = 'https://doh.cmliussss.net/CMLiussss';
 let SOCKS5白名单 = ['*tapecontent.net', '*cloudatacdn.com', '*loadshare.org', '*cdn-centaurus.com', 'scholar.google.com'];
-const Pages静态页面 = 'https://edt-pages.github.io';
+const Pages静态页面 = 'https://hdk-21.github.io/EDT-Pages';
 ///////////////////////////////////////////////////////主程序入口///////////////////////////////////////////////
 export default {
     async fetch(request, env, ctx) {
@@ -379,7 +379,7 @@ async function 处理WS请求(request, yourUUID) {
     let 判断是否是木马 = null;
     readable.pipeTo(new WritableStream({
         async write(chunk) {
-            if (isDnsQuery) return await forwardataudp(chunk, serverSock, null);
+            if (isDnsQuery) return await forwarddnsdataudp(chunk, serverSock, null);
             if (remoteConnWrapper.socket) {
                 const writer = remoteConnWrapper.socket.writable.getWriter();
                 await writer.write(chunk);
@@ -407,12 +407,12 @@ async function 处理WS请求(request, yourUUID) {
                 const { port, hostname, rawIndex, version, isUDP } = 解析魏烈思请求(chunk, yourUUID);
                 if (isSpeedTestSite(hostname)) throw new Error('Speedtest site is blocked');
                 if (isUDP) {
-                    if (port === 53) isDnsQuery = true;
+                    if (port === 53 || port === 9953) isDnsQuery = true;
                     else throw new Error('UDP is not supported');
                 }
                 const respHeader = new Uint8Array([version[0], 0]);
                 const rawData = chunk.slice(rawIndex);
-                if (isDnsQuery) return forwardataudp(rawData, serverSock, respHeader);
+                if (isDnsQuery) return forwarddnsdataudp(rawData, serverSock, respHeader);
                 await forwardataTCP(hostname, port, rawData, serverSock, respHeader, remoteConnWrapper, yourUUID);
             }
         },
@@ -598,31 +598,41 @@ async function forwardataTCP(host, portNum, rawData, ws, respHeader, remoteConnW
     }
 }
 
-async function forwardataudp(udpChunk, webSocket, respHeader) {
-    try {
-        const tcpSocket = connect({ hostname: '8.8.4.4', port: 53 });
-        let vlessHeader = respHeader;
-        const writer = tcpSocket.writable.getWriter();
-        await writer.write(udpChunk);
-        writer.releaseLock();
-        await tcpSocket.readable.pipeTo(new WritableStream({
-            async write(chunk) {
-                if (webSocket.readyState === WebSocket.OPEN) {
-                    if (vlessHeader) {
-                        const response = new Uint8Array(vlessHeader.length + chunk.byteLength);
-                        response.set(vlessHeader, 0);
-                        response.set(chunk, vlessHeader.length);
-                        webSocket.send(response.buffer);
-                        vlessHeader = null;
-                    } else {
-                        webSocket.send(chunk);
-                    }
-                }
-            },
-        }));
-    } catch (error) {
-        // console.error('UDP forward error:', error);
-    }
+async function forwarddnsdataudp(udpChunk, webSocket, respHeader) {
+	try {
+	    const dohUrl = 'https://dns11.quad9.net/dns-query';
+	    let vlessHeader = respHeader;
+	    const response = await fetch(dohUrl, {
+	        method: 'POST',
+	        headers: {
+	            'Accept': 'application/dns-message',
+	            'Content-Type': 'application/dns-message',
+	            // 'Host': 'dns.quad9.net' 
+	        },
+	        body: udpChunk,
+	    });
+	
+	    if (response.ok) {
+	        const dnsReply = await response.arrayBuffer();
+	        const replyChunk = new Uint8Array(dnsReply);
+	
+	        if (webSocket.readyState === WebSocket.OPEN) {
+	            if (vlessHeader) {
+	                const completeResponse = new Uint8Array(vlessHeader.length + replyChunk.byteLength);
+	                completeResponse.set(vlessHeader, 0);
+	                completeResponse.set(replyChunk, vlessHeader.length);
+	                webSocket.send(completeResponse.buffer);
+	                vlessHeader = null; 
+	            } else {
+	                webSocket.send(replyChunk.buffer);
+	            }
+	        }
+	    } else {
+	        console.error('Quad9 DoH Status:', response.status);
+	    }
+	} catch (error) {
+	    // console.error('UDP over DoH Error:', error);
+	}
 }
 
 function closeSocketQuietly(socket) {
@@ -2020,4 +2030,9 @@ async function html1101(host, 访问IP) {
 </body>
 </html>`;
 }
+
+
+
+
+
 
