@@ -7,6 +7,9 @@ keep_vars = true
 binding = "KV"
 id = "ec2cb270e30c4d4a847a7d11096c4167"
 
+[placement]
+mode = "smart"
+
 [observability]
 enabled = false
 head_sampling_rate = 1
@@ -21,4 +24,5 @@ invocation_logs = true
 enabled = true
 persist = true
 head_sampling_rate = 1
+
 
