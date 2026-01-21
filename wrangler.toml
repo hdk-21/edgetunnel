@@ -1,4 +1,4 @@
-name = "v20251104"
+name = "e"
 main = "_worker.js"
 compatibility_date = "2025-11-04"
 keep_vars = true
@@ -24,5 +24,6 @@ invocation_logs = true
 enabled = true
 persist = true
 head_sampling_rate = 1
+
 
 
