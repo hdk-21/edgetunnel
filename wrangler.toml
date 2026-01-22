@@ -5,7 +5,7 @@ keep_vars = true
 
 [[kv_namespaces]]
 binding = "KV"
-id = "ec2cb270e30c4d4a847a7d11096c4167"
+id = "aeca4dd5083545389eef18cc0a19ec40"
 
 [placement]
 mode = "smart"
@@ -24,5 +24,6 @@ invocation_logs = true
 enabled = true
 persist = true
 head_sampling_rate = 1
+
 
 
