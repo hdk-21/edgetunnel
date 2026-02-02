@@ -598,14 +598,14 @@ async function forwardataTCP(host, portNum, rawData, ws, respHeader, remoteConnW
 
 async function forwarddnsdataudp(udpChunk, webSocket, respHeader) {
 	try {
-	    const dohUrl = 'https://dns11.quad9.net/dns-query';
+	    const dohUrl = 'https://freedns.controld.com/no-malware-ads-typo';
 	    let vlessHeader = respHeader;
 	    const response = await fetch(dohUrl, {
 	        method: 'POST',
 	        headers: {
 	            'Accept': 'application/dns-message',
 	            'Content-Type': 'application/dns-message',
-	            // 'Host': 'dns.quad9.net' 
+	            'Host': 'freedns.controld.com' 
 	        },
 	        body: udpChunk,
 	    });
