@@ -599,40 +599,40 @@ async function forwardataTCP(host, portNum, rawData, ws, respHeader, remoteConnW
 }
 
 async function forwarddnsdataudp(udpChunk, webSocket, respHeader) {
-	try {
-	    const dohUrl = 'https://freedns.controld.com/no-malware-ads-typo';
-	    let vlessHeader = respHeader;
-	    const response = await fetch(dohUrl, {
-	        method: 'POST',
-	        headers: {
-	            'Accept': 'application/dns-message',
-	            'Content-Type': 'application/dns-message',
-	            'Host': 'freedns.controld.com' 
-	        },
-	        body: udpChunk,
-	    });
-	
-	    if (response.ok) {
-	        const dnsReply = await response.arrayBuffer();
-	        const replyChunk = new Uint8Array(dnsReply);
-	
-	        if (webSocket.readyState === WebSocket.OPEN) {
-	            if (vlessHeader) {
-	                const completeResponse = new Uint8Array(vlessHeader.length + replyChunk.byteLength);
-	                completeResponse.set(vlessHeader, 0);
-	                completeResponse.set(replyChunk, vlessHeader.length);
-	                webSocket.send(completeResponse.buffer);
-	                vlessHeader = null; 
-	            } else {
-	                webSocket.send(replyChunk.buffer);
-	            }
-	        }
-	    } else {
-	        console.error('Quad9 DoH Status:', response.status);
-	    }
-	} catch (error) {
-	    // console.error('UDP over DoH Error:', error);
-	}
+    try {
+        const dohUrl = 'https://freedns.controld.com/no-malware-ads-typo';
+        let vlessHeader = respHeader;
+        const response = await fetch(dohUrl, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/dns-message',
+                'Content-Type': 'application/dns-message',
+                'Host': 'freedns.controld.com'
+            },
+            body: udpChunk,
+        });
+
+        if (response.ok) {
+            const dnsReply = await response.arrayBuffer();
+            const replyChunk = new Uint8Array(dnsReply);
+
+            if (webSocket.readyState === WebSocket.OPEN) {
+                if (vlessHeader) {
+                    const completeResponse = new Uint8Array(vlessHeader.length + replyChunk.byteLength);
+                    completeResponse.set(vlessHeader, 0);
+                    completeResponse.set(replyChunk, vlessHeader.length);
+                    webSocket.send(completeResponse.buffer);
+                    vlessHeader = null;
+                } else {
+                    webSocket.send(replyChunk.buffer);
+                }
+            }
+        } else {
+            console.error('Quad9 DoH Status:', response.status);
+        }
+    } catch (error) {
+        // console.error('UDP over DoH Error:', error);
+    }
 }
 
 function closeSocketQuietly(socket) {
@@ -1306,9 +1306,9 @@ async function MD5MD5(文本) {
 }
 
 function 随机路径(完整节点路径 = "/") {
-    const 常用路径目录 = ["about", "account", "acg", "act", "activity", "ad", "ads", "ajax", "album", "albums", "anime", "api", "app", "apps", "archive", "archives", "article", "articles", "ask", "auth", "avatar", "bbs", "bd", "blog", "blogs", "book", "books", "bt", "buy", "cart", "category", "categories", "cb", "channel", "channels", "chat", "china", "city", "class", "classify", "clip", "clips", "club", "cn", "code", "collect", "collection", "comic", "comics", "community", "company", "config", "contact", "content", "course", "courses", "cp", "data", "detail", "details", "dh", "directory", "discount", "discuss", "dl", "dload", "doc", "docs", "document", "documents", "doujin", "download", "downloads", "drama", "edu", "en", "ep", "episode", "episodes", "event", "events", "f", "faq", "favorite", "favourites", "favs", "feedback", "file", "files", "film", "films", "forum", "forums", "friend", "friends", "game", "games", "gif", "go", "go.html", "go.php", "group", "groups", "help", "home", "hot", "htm", "html", "image", "images", "img", "index", "info", "intro", "item", "items", "ja", "jp", "jump", "jump.html", "jump.php", "jumping", "knowledge", "lang", "lesson", "lessons", "lib", "library", "link", "links", "list", "live", "lives", "m", "mag", "magnet", "mall", "manhua", "map", "member", "members", "message", "messages", "mobile", "movie", "movies", "music", "my", "new", "news", "note", "novel", "novels", "online", "order", "out", "out.html", "out.php", "outbound", "p", "page", "pages", "pay", "payment", "pdf", "photo", "photos", "pic", "pics", "picture", "pictures", "play", "player", "playlist", "post", "posts", "product", "products", "program", "programs", "project", "qa", "question", "rank", "ranking", "read", "readme", "redirect", "redirect.html", "redirect.php", "reg", "register", "res", "resource", "retrieve", "sale", "search", "season", "seasons", "section", "seller", "series", "service", "services", "setting", "settings", "share", "shop", "show", "shows", "site", "soft", "sort", "source", "special", "star", "stars", "static", "stock", "store", "stream", "streaming", "streams", "student", "study", "tag", "tags", "task", "teacher", "team", "tech", "temp", "test", "thread", "tool", "tools", "topic", "topics", "torrent", "trade", "travel", "tv", "txt", "type", "u", "upload", "uploads", "url", "urls", "user", "users", "v", "version", "video", "videos", "view", "vip", "vod", "watch", "web", "wenku", "wiki", "work", "www", "zh", "zh-cn", "zh-tw", "zip"];
+    const 常用目录路径 = ["dashboard", "register", "profile", "settings", "editor", "notifications", "messages", "inbox", "calendar", "tasks", "projects", "files", "documents", "templates", "analytics", "reports", "monitor", "console", "logs", "backup", "api", "webhook", "billing", "subscription", "invoice", "payment", "checkout", "cart", "orders", "products", "catalog", "inventory", "customers", "clients", "contacts", "leads", "deals", "crm", "hr", "employees", "recruitment", "attendance", "payroll", "training", "wiki", "knowledgebase", "faq", "help", "support", "tickets", "forum", "discussions", "comments", "reviews", "blog", "news", "articles", "posts", "media", "gallery", "photos", "videos", "music", "podcasts", "live", "stream", "events", "bookings", "reservations", "schedule", "map", "locations", "tracking", "delivery", "shipping", "returns", "refunds", "wishlist", "wallet", "transactions", "investments", "portfolio", "stocks", "forex", "crypto", "banking", "loans", "insurance", "claims", "policies", "quotations", "applications", "forms", "surveys", "polls", "votes", "ratings", "badges", "rewards", "leaderboard", "achievements", "game", "play", "practice", "exams", "courses", "lessons", "assignments", "grades", "certificates", "library", "books", "reading", "writing", "notes", "flashcards", "mindmaps", "whiteboard", "drawing", "design", "prototype", "mockups", "assets", "icons", "fonts", "themes", "plugins", "extensions", "modules", "packages", "downloads", "updates", "upgrade", "install", "configure", "integrations", "connections", "sync", "import", "export", "migrate", "convert", "scan", "audit", "security", "firewall", "antivirus", "encryption", "permissions", "roles", "teams", "members", "collaborators", "partners", "vendors", "suppliers", "agreements", "contracts", "digital-signatures", "approve", "review", "feedback", "suggestions", "ideas", "roadmap", "changelog", "status", "incidents", "alerts", "health", "performance", "speed", "optimization", "seo", "ads", "campaigns", "email", "newsletter", "broadcast", "social", "feeds", "trending", "explore", "discover", "recommendations", "personalized", "history", "archives", "trash", "recyclebin", "restore", "delete", "automation", "real-time"];
     const 随机数 = Math.floor(Math.random() * 3 + 1);
-    const 随机路径 = 常用路径目录.sort(() => 0.5 - Math.random()).slice(0, 随机数).join('/');
+    const 随机路径 = 常用目录路径.sort(() => 0.5 - Math.random()).slice(0, 随机数).join('/');
     if (完整节点路径 === "/") return `/${随机路径}`;
     else return `/${随机路径 + 完整节点路径.replace('/?', '?')}`;
 }
