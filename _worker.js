@@ -1310,7 +1310,7 @@ function 数组转十六进制(数组缓冲) {
     return 数组.map(字节 => 字节.toString(16).padStart(2, '0')).join('');
 }
 
-async function SHAtext(文本, 算法 = 'SHA3-256') {
+async function SHAtext(文本, 算法 = 'SHA-512') {
     const 编码器 = new TextEncoder();
     const 盐 = "喜马拉雅盐";
     const 哈希 = await crypto.subtle.digest(算法, 编码器.encode(盐 + 文本));
