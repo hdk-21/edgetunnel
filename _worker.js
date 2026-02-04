@@ -12,11 +12,11 @@ export default {
         const UA = request.headers.get('User-Agent') || 'null';
         const upgradeHeader = request.headers.get('Upgrade');
         const 管理员密码 = env.ADMIN || env.admin || env.PASSWORD || env.password || env.pswd || env.TOKEN || env.KEY || env.UUID || env.uuid;
-        const 加密秘钥 = env.KEY || '勿动此默认密钥，有需求请自行通过添加变量KEY进行修改';
-        const userIDMD5 = await MD5MD5(管理员密码 + 加密秘钥);
+        const 加密秘钥 = env.KEY || 'ihDDpVZWHi77Dbxu5aGuFoxEUiZZowES7EdMAywWwaumvMgiW9VM5fDQABtzDntYgQmW9my5DGQLa6Jmsypjycog';
+        const userIDHash = await SHAtext(管理员密码 + 加密秘钥);
         const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
         const envUUID = env.UUID || env.uuid;
-        const userID = (envUUID && uuidRegex.test(envUUID)) ? envUUID.toLowerCase() : [userIDMD5.slice(0, 8), userIDMD5.slice(8, 12), '4' + userIDMD5.slice(13, 16), '8' + userIDMD5.slice(17, 20), userIDMD5.slice(20)].join('-');
+        const userID = (envUUID && uuidRegex.test(envUUID)) ? envUUID.toLowerCase() : [userIDHash.slice(0, 8), userIDHash.slice(8, 12), '4' + userIDHash.slice(13, 16), '8' + userIDHash.slice(17, 20), userIDHash.slice(20)].join('-');
         const hosts = env.HOST ? (await 整理成数组(env.HOST)).map(h => h.toLowerCase().replace(/^https?:\/\//, '').split('/')[0].split(':')[0]) : [url.hostname];
         const host = hosts[0];
         if (env.PROXYIP) {
@@ -32,14 +32,14 @@ export default {
             if (env.KV && typeof env.KV.get === 'function') {
                 const 访问路径 = url.pathname.slice(1).toLowerCase();
                 const 区分大小写访问路径 = url.pathname.slice(1);
-                if (区分大小写访问路径 === 加密秘钥 && 加密秘钥 !== '勿动此默认密钥，有需求请自行通过添加变量KEY进行修改') {//快速订阅
+                if (区分大小写访问路径 === 加密秘钥 && 加密秘钥 !== 'ihDDpVZWHi77Dbxu5aGuFoxEUiZZowES7EdMAywWwaumvMgiW9VM5fDQABtzDntYgQmW9my5DGQLa6Jmsypjycog') {//快速订阅
                     const params = new URLSearchParams(url.search);
-                    params.set('token', await MD5MD5(host + userID));
+                    params.set('token', await SHAtext(host + userID));
                     return new Response('重定向中...', { status: 302, headers: { 'Location': `/sub?${params.toString()}` } });
                 } else if (访问路径 === 'login') {//处理登录页面和登录请求
                     const cookies = request.headers.get('Cookie') || '';
                     const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='))?.split('=')[1];
-                    if (authCookie == await MD5MD5(UA + 加密秘钥 + 管理员密码)) return new Response('重定向中...', { status: 302, headers: { 'Location': '/admin' } });
+                    if (authCookie == await SHAtext(UA + 加密秘钥 + 管理员密码)) return new Response('重定向中...', { status: 302, headers: { 'Location': '/admin' } });
                     if (request.method === 'POST') {
                         const formData = await request.text();
                         const params = new URLSearchParams(formData);
@@ -47,7 +47,7 @@ export default {
                         if (输入密码 === 管理员密码) {
                             // 密码正确，设置cookie并返回成功标记
                             const 响应 = new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
-                            响应.headers.set('Set-Cookie', `auth=${await MD5MD5(UA + 加密秘钥 + 管理员密码)}; Path=/; Max-Age=86400; HttpOnly`);
+                            响应.headers.set('Set-Cookie', `auth=${await SHAtext(UA + 加密秘钥 + 管理员密码)}; Path=/; Max-Age=86400; HttpOnly`);
                             return 响应;
                         }
                     }
@@ -56,7 +56,7 @@ export default {
                     const cookies = request.headers.get('Cookie') || '';
                     const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='))?.split('=')[1];
                     // 没有cookie或cookie错误，跳转到/login页面
-                    if (!authCookie || authCookie !== await MD5MD5(UA + 加密秘钥 + 管理员密码)) return new Response('重定向中...', { status: 302, headers: { 'Location': '/login' } });
+                    if (!authCookie || authCookie !== await SHAtext(UA + 加密秘钥 + 管理员密码)) return new Response('重定向中...', { status: 302, headers: { 'Location': '/login' } });
                     if (访问路径 === 'admin/log.json') {// 读取日志内容
                         const 读取日志内容 = await env.KV.get('log.json') || '[]';
                         return new Response(读取日志内容, { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
@@ -191,7 +191,7 @@ export default {
                     响应.headers.set('Set-Cookie', 'auth=; Path=/; Max-Age=0; HttpOnly');
                     return 响应;
                 } else if (访问路径 === 'sub') {//处理订阅请求
-                    const 订阅TOKEN = await MD5MD5(host + userID);
+                    const 订阅TOKEN = await SHAtext(host + userID);
                     if (url.searchParams.get('token') === 订阅TOKEN) {
                         config_JSON = await 读取config_JSON(env, host, userID);
                         ctx.waitUntil(请求日志记录(env, request, 访问IP, 'Get_SUB', config_JSON));
@@ -333,7 +333,7 @@ export default {
                 } else if (访问路径 === 'locations') {//反代locations列表
                     const cookies = request.headers.get('Cookie') || '';
                     const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='))?.split('=')[1];
-                    if (authCookie && authCookie == await MD5MD5(UA + 加密秘钥 + 管理员密码)) return fetch(new Request('https://speed.cloudflare.com/locations', { headers: { 'Referer': 'https://speed.cloudflare.com/' } }));
+                    if (authCookie && authCookie == await SHAtext(UA + 加密秘钥 + 管理员密码)) return fetch(new Request('https://speed.cloudflare.com/locations', { headers: { 'Referer': 'https://speed.cloudflare.com/' } }));
                 } else if (访问路径 === 'robots.txt') return new Response('User-agent: *\nDisallow: /', { status: 200, headers: { 'Content-Type': 'text/plain; charset=UTF-8' } });
             } else if (!envUUID) return fetch(Pages静态页面 + '/noKV').then(r => { const headers = new Headers(r.headers); headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate'); headers.set('Pragma', 'no-cache'); headers.set('Expires', '0'); return new Response(r.body, { status: 404, statusText: r.statusText, headers }); });
         } else if (管理员密码) {// ws代理
@@ -1305,6 +1305,18 @@ async function MD5MD5(文本) {
     return 第二次十六进制.toLowerCase();
 }
 
+function 数组转十六进制(数组缓冲) {
+    const 数组 = Array.from(new Uint8Array(数组缓冲));
+    return 数组.map(字节 => 字节.toString(16).padStart(2, '0')).join('');
+}
+
+async function SHAtext(文本, 算法 = 'SHA3-256') {
+    const 编码器 = new TextEncoder();
+    const 盐 = "喜马拉雅盐";
+    const 哈希 = await crypto.subtle.digest(算法, 编码器.encode(盐 + 文本));
+    return 数组转十六进制(哈希);
+}
+
 function 随机路径(完整节点路径 = "/") {
     const 常用目录路径 = ["dashboard", "register", "profile", "settings", "editor", "notifications", "messages", "inbox", "calendar", "tasks", "projects", "files", "documents", "templates", "analytics", "reports", "monitor", "console", "logs", "backup", "api", "webhook", "billing", "subscription", "invoice", "payment", "checkout", "cart", "orders", "products", "catalog", "inventory", "customers", "clients", "contacts", "leads", "deals", "crm", "hr", "employees", "recruitment", "attendance", "payroll", "training", "wiki", "knowledgebase", "faq", "help", "support", "tickets", "forum", "discussions", "comments", "reviews", "blog", "news", "articles", "posts", "media", "gallery", "photos", "videos", "music", "podcasts", "live", "stream", "events", "bookings", "reservations", "schedule", "map", "locations", "tracking", "delivery", "shipping", "returns", "refunds", "wishlist", "wallet", "transactions", "investments", "portfolio", "stocks", "forex", "crypto", "banking", "loans", "insurance", "claims", "policies", "quotations", "applications", "forms", "surveys", "polls", "votes", "ratings", "badges", "rewards", "leaderboard", "achievements", "game", "play", "practice", "exams", "courses", "lessons", "assignments", "grades", "certificates", "library", "books", "reading", "writing", "notes", "flashcards", "mindmaps", "whiteboard", "drawing", "design", "prototype", "mockups", "assets", "icons", "fonts", "themes", "plugins", "extensions", "modules", "packages", "downloads", "updates", "upgrade", "install", "configure", "integrations", "connections", "sync", "import", "export", "migrate", "convert", "scan", "audit", "security", "firewall", "antivirus", "encryption", "permissions", "roles", "teams", "members", "collaborators", "partners", "vendors", "suppliers", "agreements", "contracts", "digital-signatures", "approve", "review", "feedback", "suggestions", "ideas", "roadmap", "changelog", "status", "incidents", "alerts", "health", "performance", "speed", "optimization", "seo", "ads", "campaigns", "email", "newsletter", "broadcast", "social", "feeds", "trending", "explore", "discover", "recommendations", "personalized", "history", "archives", "trash", "recyclebin", "restore", "delete", "automation", "real-time"];
     const 随机数 = Math.floor(Math.random() * 3 + 1);
@@ -1398,7 +1410,7 @@ async function 读取config_JSON(env, hostname, userID, 重置配置 = false) {
             SUB: null,
             SUBNAME: "edge" + "tunnel",
             SUBUpdateTime: 3, // 订阅更新时间（小时）
-            TOKEN: await MD5MD5(hostname + userID),
+            TOKEN: await SHAtext(hostname + userID),
         },
         订阅转换配置: {
             SUBAPI: "https://SUBAPI.cmliussss.net",
@@ -1475,7 +1487,7 @@ async function 读取config_JSON(env, hostname, userID, 重置配置 = false) {
     if (!config_JSON.ECHConfig) config_JSON.ECHConfig = { DNS: CM_DoH, SNI: null };
     const ECHLINK参数 = config_JSON.ECH ? `&ech=${encodeURIComponent((config_JSON.ECHConfig.SNI ? config_JSON.ECHConfig.SNI + '+' : '') + config_JSON.ECHConfig.DNS)}` : '';
     config_JSON.LINK = `${config_JSON.协议类型}://${userID}@${host}:443?security=tls&type=${config_JSON.传输协议 + ECHLINK参数}&host=${host}&fp=${config_JSON.Fingerprint}&sni=${host}&path=${encodeURIComponent(config_JSON.随机路径 ? 随机路径(config_JSON.完整节点路径) : config_JSON.完整节点路径) + TLS分片参数}&encryption=none${config_JSON.跳过证书验证 ? '&insecure=1&allowInsecure=1' : ''}#${encodeURIComponent(config_JSON.优选订阅生成.SUBNAME)}`;
-    config_JSON.优选订阅生成.TOKEN = await MD5MD5(hostname + userID);
+    config_JSON.优选订阅生成.TOKEN = await SHAtext(hostname + userID);
 
     const 初始化TG_JSON = { BotToken: null, ChatID: null };
     config_JSON.TG = { 启用: config_JSON.TG.启用 ? config_JSON.TG.启用 : false, ...初始化TG_JSON };
