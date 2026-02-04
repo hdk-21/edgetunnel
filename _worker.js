@@ -12,7 +12,9 @@ export default {
         const UA = request.headers.get('User-Agent') || 'null';
         const upgradeHeader = request.headers.get('Upgrade');
         const 管理员密码 = env.ADMIN || env.admin || env.PASSWORD || env.password || env.pswd || env.TOKEN || env.KEY || env.UUID || env.uuid;
-        const 加密秘钥 = env.KEY || 'ihDDpVZWHi77Dbxu5aGuFoxEUiZZowES7EdMAywWwaumvMgiW9VM5fDQABtzDntYgQmW9my5DGQLa6Jmsypjycog';
+        // 支持多个加密秘钥：可以是单个秘钥或多个秘钥（逗号分隔或数组）
+        const 加密秘钥列表 = await 解析加密秘钥(env.KEY || env.KEYS || 'ihDDpVZWHi77Dbxu5aGuFoxEUiZZowES7EdMAywWwaumvMgiW9VM5fDQABtzDntYgQmW9my5DGQLa6Jmsypjycog');
+        const 加密秘钥 = 加密秘钥列表[0]; // 使用第一个作为主秘钥
         const userIDHash = await SHAtext(管理员密码 + 加密秘钥);
         const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
         const envUUID = env.UUID || env.uuid;
@@ -39,24 +41,29 @@ export default {
                 } else if (访问路径 === 'login') {//处理登录页面和登录请求
                     const cookies = request.headers.get('Cookie') || '';
                     const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='))?.split('=')[1];
-                    if (authCookie == await SHAtext(UA + 加密秘钥 + 管理员密码)) return new Response('重定向中...', { status: 302, headers: { 'Location': '/admin' } });
+                    // 验证现有cookie的有效性和过期时间（支持多个秘钥验证）
+                    if (authCookie && await 验证认证Cookie(authCookie, UA, 加密秘钥列表, 管理员密码)) return new Response('重定向中...', { status: 302, headers: { 'Location': '/admin' } });
                     if (request.method === 'POST') {
                         const formData = await request.text();
                         const params = new URLSearchParams(formData);
                         const 输入密码 = params.get('password');
                         if (输入密码 === 管理员密码) {
-                            // 密码正确，设置cookie并返回成功标记
+                            // 密码正确，生成新cookie并返回成功标记（使用主秘钥）
+                            const 新cookie = await 生成认证Cookie(UA, 加密秘钥, 管理员密码, 86400);
                             const 响应 = new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
-                            响应.headers.set('Set-Cookie', `auth=${await SHAtext(UA + 加密秘钥 + 管理员密码)}; Path=/; Max-Age=86400; HttpOnly`);
+                            响应.headers.set('Set-Cookie', `auth=${新cookie}; Path=/; Max-Age=86400; HttpOnly; Secure; SameSite=Strict`);
                             return 响应;
+                        } else {
+                            // 登录失败
+                            return new Response(JSON.stringify({ success: false, error: '密码错误' }), { status: 401, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
                         }
                     }
                     return fetch(Pages静态页面 + '/login');
                 } else if (访问路径 === 'admin' || 访问路径.startsWith('admin/')) {//验证cookie后响应管理页面
                     const cookies = request.headers.get('Cookie') || '';
                     const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='))?.split('=')[1];
-                    // 没有cookie或cookie错误，跳转到/login页面
-                    if (!authCookie || authCookie !== await SHAtext(UA + 加密秘钥 + 管理员密码)) return new Response('重定向中...', { status: 302, headers: { 'Location': '/login' } });
+                    // 验证cookie的有效性和过期时间，无效或过期则跳转到/login页面（支持多个秘钥验证）
+                    if (!authCookie || !(await 验证认证Cookie(authCookie, UA, 加密秘钥列表, 管理员密码))) return new Response('重定向中...', { status: 302, headers: { 'Location': '/login' } });
                     if (访问路径 === 'admin/log.json') {// 读取日志内容
                         const 读取日志内容 = await env.KV.get('log.json') || '[]';
                         return new Response(读取日志内容, { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
@@ -188,7 +195,7 @@ export default {
                     return fetch(Pages静态页面 + '/admin');
                 } else if (访问路径 === 'logout' || uuidRegex.test(访问路径)) {//清除cookie并跳转到登录页面
                     const 响应 = new Response('重定向中...', { status: 302, headers: { 'Location': '/login' } });
-                    响应.headers.set('Set-Cookie', 'auth=; Path=/; Max-Age=0; HttpOnly');
+                    响应.headers.set('Set-Cookie', 'auth=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict');
                     return 响应;
                 } else if (访问路径 === 'sub') {//处理订阅请求
                     const 订阅TOKEN = await SHAtext(host + userID);
@@ -333,7 +340,11 @@ export default {
                 } else if (访问路径 === 'locations') {//反代locations列表
                     const cookies = request.headers.get('Cookie') || '';
                     const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='))?.split('=')[1];
-                    if (authCookie && authCookie == await SHAtext(UA + 加密秘钥 + 管理员密码)) return fetch(new Request('https://speed.cloudflare.com/locations', { headers: { 'Referer': 'https://speed.cloudflare.com/' } }));
+                    // 验证cookie的有效性和过期时间（支持多个秘钥验证）
+                    if (authCookie && await 验证认证Cookie(authCookie, UA, 加密秘钥列表, 管理员密码)) {
+                        return fetch(new Request('https://speed.cloudflare.com/locations', { headers: { 'Referer': 'https://speed.cloudflare.com/' } }));
+                    }
+                    return new Response('未授权', { status: 401, headers: { 'Content-Type': 'text/plain' } });
                 } else if (访问路径 === 'robots.txt') return new Response('User-agent: *\nDisallow: /', { status: 200, headers: { 'Content-Type': 'text/plain; charset=UTF-8' } });
             } else if (!envUUID) return fetch(Pages静态页面 + '/noKV').then(r => { const headers = new Headers(r.headers); headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate'); headers.set('Pragma', 'no-cache'); headers.set('Expires', '0'); return new Response(r.body, { status: 404, statusText: r.statusText, headers }); });
         } else if (管理员密码) {// ws代理
@@ -1315,6 +1326,51 @@ async function SHAtext(文本, 算法 = 'SHA-256') {
     const 盐 = "喜马拉雅盐";
     const 哈希 = await crypto.subtle.digest(算法, 编码器.encode(盐 + 文本));
     return 数组转十六进制(哈希).substring(0, 32);
+}
+
+// 解析多个加密秘钥 - 支持逗号、换行、管道符分隔
+async function 解析加密秘钥(秘钥输入) {
+    if (!秘钥输入 || typeof 秘钥输入 !== 'string') {
+        return ['ihDDpVZWHi77Dbxu5aGuFoxEUiZZowES7EdMAywWwaumvMgiW9VM5fDQABtzDntYgQmW9my5DGQLa6Jmsypjycog'];
+    }
+    // 支持多种分隔符: 逗号、换行、管道符
+    const 秘钥列表 = 秘钥输入
+        .split(/[,\n|]+/)
+        .map(k => k.trim())
+        .filter(k => k.length > 0);
+    return 秘钥列表.length > 0 ? 秘钥列表 : ['ihDDpVZWHi77Dbxu5aGuFoxEUiZZowES7EdMAywWwaumvMgiW9VM5fDQABtzDntYgQmW9my5DGQLa6Jmsypjycog'];
+}
+
+// Cookie验证函数 - 生成包含过期时间的认证Cookie
+async function 生成认证Cookie(UA, 加密秘钥, 管理员密码, 过期时间秒 = 86400) {
+    const 时间戳 = Math.floor(Date.now() / 1000);
+    const 过期时间戳 = 时间戳 + 过期时间秒;
+    const cookie值 = await SHAtext(UA + 加密秘钥 + 管理员密码 + 时间戳);
+    return `${cookie值}|${过期时间戳}`;
+}
+
+// Cookie验证函数 - 检查有效性和过期时间（支持多个秘钥验证）
+async function 验证认证Cookie(cookie, UA, 加密秘钥列表, 管理员密码) {
+    if (!cookie || typeof cookie !== 'string') return false;
+    const [cookie值, 过期时间戳字符串] = cookie.split('|');
+    if (!cookie值 || !过期时间戳字符串) return false;
+    
+    const 过期时间戳 = parseInt(过期时间戳字符串, 10);
+    if (isNaN(过期时间戳)) return false;
+    
+    const 当前时间戳 = Math.floor(Date.now() / 1000);
+    if (当前时间戳 > 过期时间戳) return false; // Cookie已过期
+    
+    // 尝试用所有可用的秘钥进行验证（支持秘钥轮换）
+    const 秘钥数组 = Array.isArray(加密秘钥列表) ? 加密秘钥列表 : [加密秘钥列表];
+    
+    for (const 秘钥 of 秘钥数组) {
+        const 时间戳 = 过期时间戳 - 86400;
+        const 预期cookie值 = await SHAtext(UA + 秘钥 + 管理员密码 + 时间戳);
+        if (cookie值 === 预期cookie值) return true;
+    }
+    
+    return false;
 }
 
 function 随机路径(完整节点路径 = "/") {
