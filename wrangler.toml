@@ -8,7 +8,7 @@ binding = "KV"
 id = "69a67803252d435b9d57de88581b72f7"
 
 [placement]
-mode = "smart"
+region = "aws:ap-southeast-1"
 
 [observability]
 enabled = false
@@ -24,6 +24,7 @@ invocation_logs = true
 enabled = true
 persist = true
 head_sampling_rate = 1
+
 
 
 
