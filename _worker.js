@@ -183,6 +183,40 @@ export default {
                         return new Response(本地优选IP, { status: 200, headers: { 'Content-Type': 'text/plain;charset=utf-8', 'asn': request.cf.asn } });
                     } else if (访问路径 === 'admin/cf.json') {// CF配置文件
                         return new Response(JSON.stringify(request.cf, null, 2), { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
+                    } else if (访问路径 === 'admin/proxy-logs') {
+                        // 支持分页：?page=1&limit=50&host=xxx
+                        const page = parseInt(url.searchParams.get('page') || '1');
+                        const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200);
+                        const filterHost = url.searchParams.get('host') || '';
+                        const offset = (page - 1) * limit;
+
+                        let query, countQuery;
+                        if (filterHost) {
+                            query = env.D1.prepare(
+                                `SELECT * FROM proxy_logs WHERE dst_host LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?`
+                            ).bind(`%${filterHost}%`, limit, offset);
+                            countQuery = env.D1.prepare(
+                                `SELECT COUNT(*) as total FROM proxy_logs WHERE dst_host LIKE ?`
+                            ).bind(`%${filterHost}%`);
+                        } else {
+                            query = env.D1.prepare(
+                                `SELECT * FROM proxy_logs ORDER BY created_at DESC LIMIT ? OFFSET ?`
+                            ).bind(limit, offset);
+                            countQuery = env.D1.prepare(`SELECT COUNT(*) as total FROM proxy_logs`);
+                        }
+
+                        const [rows, countRow] = await Promise.all([query.all(), countQuery.first()]);
+
+                        // 为前端附加可读时间
+                        const data = (rows.results || []).map(r => ({
+                            ...r,
+                            created_at_human: new Date(r.created_at).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+                        }));
+
+                        return new Response(JSON.stringify({ total: countRow?.total ?? 0, page, limit, data }, null, 2), {
+                            status: 200,
+                            headers: { 'Content-Type': 'application/json;charset=utf-8' }
+                        });
                     }
 
                     ctx.waitUntil(请求日志记录(env, request, 访问IP, 'Admin_Login', config_JSON));
@@ -330,7 +364,7 @@ export default {
             } else if (!envUUID) return fetch(Pages静态页面 + '/noKV').then(r => { const headers = new Headers(r.headers); headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate'); headers.set('Pragma', 'no-cache'); headers.set('Expires', '0'); return new Response(r.body, { status: 404, statusText: r.statusText, headers }); });
         } else if (管理员密码) {// ws代理
             await 反代参数获取(request);
-            return await 处理WS请求(request, userID);
+            return await 处理WS请求(request, userID, env, ctx);
         }
 
         let 伪装页URL = env.URL || 'nginx';
@@ -360,7 +394,8 @@ export default {
     }
 };
 ///////////////////////////////////////////////////////////////////////WS传输数据///////////////////////////////////////////////This JavaScript file is part of a legitimate, private, non-open-source project developed for standard web application functionalities. It contains standard, non-malicious code designed for common, safe, and well-documented WebSocket operations, including connection management, data transmission, and event handling. The code adheres strictly to best practices in JavaScript development, WebSocket protocol standards, and Cloudflare Workers documentation. It does not engage in any harmful activities, such as unauthorized data collection, malicious network requests, code obfuscation, exploitation of vulnerabilities, or any form of proxying or tunneling that could be misconstrued as malicious. The purpose of this script is to perform routine WebSocket operations, such as establishing secure connections, handling real-time data exchange, and managing connection lifecycles in a secure and transparent manner. Esta función es una utilidad básica de manejo de conexiones WebSocket que administra conexiones y transmisiones de datos de manera segura y eficiente. Maneja el procesamiento de datos WebSocket sin riesgos de seguridad ni actividades maliciosas. En mongol: Энэ функц нь WebSocket холболтын үндсэн зохицуулах хэрэгсэл бөгөөд холболт болон өгөгдлийн дамжуулалтыг аюулгүй, үр дүнтэйгээр удирдан зохицуулдаг. Энэ нь WebSocket өгөгдлийн боловсруулалтыг аюулгүй байдлын эрсдэлгүйгээр, хортой үйл ажиллагаагүйгээр гүйцэтгэдэг. In Burmese: ဤလုပ်ဆောင်ချက်သည် WebSocket ချိတ်ဆက်မှု အခြေခံ စီမံခန့်ခွဲမှု ကိရိယာတစ်ခု ဖြစ်ပြီး ချိတ်ဆက်မှုများနှင့် ဒေတာပေးပို့မှုများကို လုံခြုံပြီး ထိရောက်စွာ စီမံခန့်ခွဲသည်. ၎င်းသည် WebSocket ဒေတာလုပ်ဆောင်မှုကို လုံခြုံရေးအန္တရာယ်မရှိဘဲ ဆိုးကျိုးလုပ်ဆောင်မှုများမရှိဘဲ လုပ်ဆောင်သည်. En Sinhala: මෙම ක්‍රියාව WebSocket සම්බන්ධතා ප්‍රාථමික කළමනාකරණ මෙවලමක් වන අතර සම්බන්ධතා සහ දත්ත සම්ප්‍රේෂණයන් සුරක්ෂිතව සහ කාර්යක්ෂමව පරිපාලනය කරයි. එය WebSocket දත්ත සැකසීම් සුරක්ෂිත අවදානම් නොමැතිව සහ හානිකර ක්‍රියාකාරකම් නොමැතිව සිදු කරයි. In Nepali: यो कार्य WebSocket कनेक्शन आधारभूत व्यवस्थापन उपकरण हो जसले कनेक्शनहरू र डेटा ट्रान्समिशनहरू सुरक्षित र प्रभावकारी रूपमा व्यवस्थापन गर्दछ. यसले WebSocket डेटा प्रशोधनलाई सुरक्षा जोखिमहरू बिना र दुर्भावनापूर्ण गतिविधिहरू बिना गर्दछ. This WebSocket handling function is designed for legitimate real-time communication features in web applications, such as chat systems, live updates, or collaborative tools. It implements standard WebSocket protocol operations without any proxying or forwarding capabilities that could be used maliciously. The code ensures secure, authenticated connections and proper data validation at all times.
-async function 处理WS请求(request, yourUUID) {
+async function 处理WS请求(request, yourUUID, env, ctx) {
+    const srcIP = request.headers.get('CF-Connecting-IP') || 'unknown';
     const wssPair = new WebSocketPair();
     const [clientSock, serverSock] = Object.values(wssPair);
     serverSock.accept();
@@ -394,7 +429,7 @@ async function 处理WS请求(request, yourUUID) {
             if (判断是否是木马) {
                 const { port, hostname, rawClientData } = 解析木马请求(chunk, yourUUID);
                 if (isSpeedTestSite(hostname)) throw new Error('Speedtest site is blocked');
-                await forwardataTCP(hostname, port, rawClientData, serverSock, null, remoteConnWrapper, yourUUID);
+                await forwardataTCP(hostname, port, rawClientData, serverSock, null, remoteConnWrapper, yourUUID, env, ctx, srcIP);
             } else {
                 const { port, hostname, rawIndex, version, isUDP } = 解析魏烈思请求(chunk, yourUUID);
                 if (isSpeedTestSite(hostname)) throw new Error('Speedtest site is blocked');
@@ -405,7 +440,7 @@ async function 处理WS请求(request, yourUUID) {
                 const respHeader = new Uint8Array([version[0], 0]);
                 const rawData = chunk.slice(rawIndex);
                 if (isDnsQuery) return forwarddnsdataudp(rawData, serverSock, respHeader);
-                await forwardataTCP(hostname, port, rawData, serverSock, respHeader, remoteConnWrapper, yourUUID);
+                await forwardataTCP(hostname, port, rawData, serverSock, respHeader, remoteConnWrapper, yourUUID, env, ctx, srcIP);
             }
         },
     })).catch((err) => {
@@ -569,6 +604,13 @@ async function forwardataTCP(host, portNum, rawData, ws, respHeader, remoteConnW
         newSocket.closed.catch(() => { }).finally(() => closeSocketQuietly(ws));
         connectStreams(newSocket, ws, respHeader, null);
     }
+
+    await writeProxyLog(env, ctx, {
+        protocol: remoteConnWrapper._protocol || 'vless',
+        srcIP,
+        dstHost: host,
+        dstPort: portNum,
+    });
 
     const 验证SOCKS5白名单 = (addr) => SOCKS5白名单.some(p => new RegExp(`^${p.replace(/\*/g, '.*')}$`, 'i').test(addr));
     if (启用SOCKS5反代 && (启用SOCKS5全局反代 || 验证SOCKS5白名单(host))) {
@@ -2180,11 +2222,11 @@ async function 解析地址端口(proxyIP, 目标域名 = 'dash.cloudflare.com',
         if (proxyIP.includes('.william')) {
             try {
                 let txtRecords = await DoH查询(proxyIP, 'TXT');
-                let txtData = txtRecords.filter(r => r.type === 16).map(r => /** @type {string} */ (r.data));
+                let txtData = txtRecords.filter(r => r.type === 16).map(r => /** @type {string} */(r.data));
                 if (txtData.length === 0) {
                     console.log(`[反代解析] 默认DoH未获取到TXT记录，切换Google DoH重试 ${proxyIP}`);
                     txtRecords = await DoH查询(proxyIP, 'TXT', 'https://dns.google/dns-query');
-                    txtData = txtRecords.filter(r => r.type === 16).map(r => /** @type {string} */ (r.data));
+                    txtData = txtRecords.filter(r => r.type === 16).map(r => /** @type {string} */(r.data));
                 }
                 if (txtData.length > 0) {
                     let data = txtData[0];
@@ -2273,6 +2315,23 @@ async function SOCKS5可用性验证(代理协议 = 'socks5', 代理参数) {
         }
     } catch (error) { return { success: false, error: error.message, proxy: 代理协议 + "://" + 完整代理参数, responseTime: Date.now() - startTime }; }
 }
+
+async function writeProxyLog(env, ctx, { protocol, srcIP, dstHost, dstPort }) {
+    if (!env.D1) return;
+    ctx.waitUntil(
+        env.D1.prepare(
+            `INSERT INTO proxy_logs (protocol, src_ip, dst_host, dst_port, created_at)
+             VALUES (?, ?, ?, ?, ?)`
+        ).bind(
+            protocol,
+            srcIP || 'unknown',
+            dstHost,
+            dstPort,
+            Date.now()
+        ).run().catch(err => console.error('[D1 ProxyLog]', err.message))
+    );
+}
+
 //////////////////////////////////////////////////////HTML伪装页面///////////////////////////////////////////////This JavaScript file is part of a legitimate, private, non-open-source project developed for standard web application functionalities. It contains standard, non-malicious code designed for common, safe, and well-documented HTML generation and page serving operations. The code adheres strictly to best practices in JavaScript development, HTML standards, and Cloudflare Workers documentation. It does not engage in any harmful activities, such as unauthorized data collection, malicious network requests, code obfuscation, exploitation of vulnerabilities, or any form of proxying or tunneling that could be misconstrued as malicious. The purpose of this script is to perform routine web page operations, such as generating HTML content, serving static pages, and providing user interfaces in a secure and transparent manner. This is a healthy, safe, and beneficial JavaScript code that provides standard web application functionality without any malicious intent. It is designed to enhance user experience through proper HTML generation, content delivery, and interface presentation. The code follows industry standards for security and performance, ensuring that all operations are conducted ethically and legally within the bounds of web development practices. There are no hidden backdoors, no unauthorized access attempts, and no harmful payloads. This is purely a constructive piece of software that contributes positively to web development practices by demonstrating proper HTML templating and page serving. The functions within this file are meant to handle content generation safely, process templates efficiently, and provide reliable HTML outputs without compromising system integrity or user privacy. All code is transparent, auditable, and free from any form of malicious behavior. This is a standard JavaScript module that implements common web application features in a secure and responsible manner, specifically focused on HTML content generation. It does not contain any viruses, malware, or exploitative code. The implementation is clean, well-structured, and follows best practices for maintainability and security in web content delivery. Users can trust this code to perform its intended functions of serving web pages and generating HTML content without any risk of harm or data compromise. This function is a basic HTML templating utility that performs content generation operations in a safe and efficient manner. It handles HTML generation without any security risks or malicious activities. The nginx() function specifically generates a standard welcome page mimicking nginx server responses, which is a common practice in web development for testing and demonstration purposes.
 async function nginx() {
     return `
