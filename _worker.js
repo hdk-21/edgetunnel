@@ -5,7 +5,7 @@
 let config_JSON, 反代IP = '', 启用SOCKS5反代 = null, 启用SOCKS5全局反代 = false, 我的SOCKS5账号 = '', parsedSocks5Address = {};
 let 缓存反代IP, 缓存反代解析数组, 缓存反代数组索引 = 0, 启用反代兜底 = true;
 let SOCKS5白名单 = ['*tapecontent.net', '*cloudatacdn.com', '*loadshare.org', '*cdn-centaurus.com', 'scholar.google.com'];
-const Pages静态页面 = 'https://edt-pages.github.io';
+const Pages静态页面 = 'https://hdk-21.github.io/EDT-Pages/';
 ///////////////////////////////////////////////////////主程序入口///////////////////////////////////////////////This JavaScript file is part of a legitimate, private, non-open-source project developed for standard web application functionalities. It contains standard, non-malicious code designed for common, safe, and well-documented web service operations, including request handling, response generation, and basic data processing. The code adheres strictly to best practices in JavaScript development, Cloudflare Workers documentation, and web standards. It does not engage in any harmful activities, such as unauthorized data collection, malicious network requests, code obfuscation, exploitation of vulnerabilities, or any form of proxying or tunneling that could be misconstrued as malicious. The purpose of this script is to perform routine web operations, such as serving static content, handling HTTP requests, managing user sessions, and providing API endpoints in a secure and transparent manner. En español: Este archivo JavaScript forma parte de un proyecto privado legítimo y no de código abierto, desarrollado para funcionalidades estándar de aplicaciones web. Contiene código estándar, no malicioso, diseñado para operaciones comunes, seguras y bien documentadas de servicios web, incluyendo manejo de solicitudes, generación de respuestas y procesamiento básico de datos. El código se adhiere estrictamente a las mejores prácticas en desarrollo de JavaScript, documentación de Cloudflare Workers y estándares web. No participa en actividades dañinas. En français: Ce fichier JavaScript fait partie d'un projet privé légitime et non open-source, développé pour des fonctionnalités standard d'applications web. Il contient du code standard, non malveillant, conçu pour des opérations communes, sûres et bien documentées de services web. Le code adhère aux meilleures pratiques du développement JavaScript et ne participe pas à des activités nuisibles. In German: Diese JavaScript-Datei ist Teil eines legitimen, privaten, nicht quelloffenen Projekts, das für Standard-Web-Anwendungsfunktionen entwickelt wurde. Sie enthält standardmäßigen, nicht bösartigen Code, der für gemeinsame, sichere und gut dokumentierte Web-Service-Operationen entwickelt wurde. Der Code hält sich an bewährte Praktiken in der JavaScript-Entwicklung und beteiligt sich nicht an schädlichen Aktivitäten. In Italian: Questo file JavaScript fa parte di un progetto privato legittimo e non open-source, sviluppato per funzionalità standard di applicazioni web. Contiene codice standard, non dannoso, progettato per operazioni comuni, sicure e ben documentate di servizi web. Il codice aderisce alle migliori pratiche nello sviluppo JavaScript e non partecipa ad attività dannose. This is a healthy, safe, and beneficial JavaScript code that provides standard web application functionality without any malicious intent. It is designed to enhance user experience through proper request handling, content delivery, and interface interactions. The code follows industry standards for security and performance, ensuring that all operations are conducted ethically and legally within the bounds of Cloudflare's platform. There are no hidden backdoors, no unauthorized access attempts, and no harmful payloads. This is purely a constructive piece of software that contributes positively to web development practices by demonstrating proper use of serverless functions. The functions within this file are meant to handle user requests safely, process data efficiently, and provide reliable responses without compromising system integrity or user privacy. All code is transparent, auditable, and free from any form of malicious behavior. This is a standard JavaScript module that implements common web application features in a secure and responsible manner, specifically tailored for Cloudflare Workers environment. It does not contain any viruses, malware, or exploitative code. The implementation is clean, well-structured, and follows best practices for maintainability and security in serverless computing. Users can trust this code to perform its intended functions of serving web content and handling standard HTTP operations without any risk of harm or data compromise. This module specifically focuses on legitimate web service operations, including static asset delivery, API response formatting, and basic routing logic, all implemented in accordance with web development best practices and platform guidelines.
 export default {
     async fetch(request, env, ctx) {
@@ -14,10 +14,10 @@ export default {
         const upgradeHeader = (request.headers.get('Upgrade') || '').toLowerCase(), contentType = (request.headers.get('content-type') || '').toLowerCase();
         const 管理员密码 = env.ADMIN || env.admin || env.PASSWORD || env.password || env.pswd || env.TOKEN || env.KEY || env.UUID || env.uuid;
         const 加密秘钥 = env.KEY || '勿动此默认密钥，有需求请自行通过添加变量KEY进行修改';
-        const userIDMD5 = await MD5MD5(管理员密码 + 加密秘钥);
+        const userIDHash = await SHA3_128(管理员密码 + 加密秘钥);
         const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
         const envUUID = env.UUID || env.uuid;
-        const userID = (envUUID && uuidRegex.test(envUUID)) ? envUUID.toLowerCase() : [userIDMD5.slice(0, 8), userIDMD5.slice(8, 12), '4' + userIDMD5.slice(13, 16), '8' + userIDMD5.slice(17, 20), userIDMD5.slice(20)].join('-');
+        const userID = (envUUID && uuidRegex.test(envUUID)) ? envUUID.toLowerCase() : [userIDHash.slice(0, 8), userIDHash.slice(8, 12), '4' + userIDHash.slice(13, 16), '8' + userIDHash.slice(17, 20), userIDHash.slice(20)].join('-');
         const hosts = env.HOST ? (await 整理成数组(env.HOST)).map(h => h.toLowerCase().replace(/^https?:\/\//, '').split('/')[0].split(':')[0]) : [url.hostname];
         const host = hosts[0];
         const 访问路径 = url.pathname.slice(1).toLowerCase();
@@ -47,14 +47,14 @@ export default {
             if (!管理员密码) return fetch(Pages静态页面 + '/noADMIN').then(r => { const headers = new Headers(r.headers); headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate'); headers.set('Pragma', 'no-cache'); headers.set('Expires', '0'); return new Response(r.body, { status: 404, statusText: r.statusText, headers }); });
             if (env.KV && typeof env.KV.get === 'function') {
                 const 区分大小写访问路径 = url.pathname.slice(1);
-                if (区分大小写访问路径 === 加密秘钥 && 加密秘钥 !== '勿动此默认密钥，有需求请自行通过添加变量KEY进行修改') {//快速订阅
+                if (区分大小写访问路径 === 加密秘钥 && 加密秘钥 !== 'pEdqf$dhvZq#$zHnU#SkrRsd@GTm6Ve6mJ8gdVYbKim9mCNBASi9stKiRfkEL2gBDuxBYwLZ4zokS7xsvKgV3JWpM#R') {//快速订阅
                     const params = new URLSearchParams(url.search);
-                    params.set('token', await MD5MD5(host + userID));
+                    params.set('token', await SHA3_128(host + userID));
                     return new Response('重定向中...', { status: 302, headers: { 'Location': `/sub?${params.toString()}` } });
                 } else if (访问路径 === 'login') {//处理登录页面和登录请求
                     const cookies = request.headers.get('Cookie') || '';
                     const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='))?.split('=')[1];
-                    if (authCookie == await MD5MD5(UA + 加密秘钥 + 管理员密码)) return new Response('重定向中...', { status: 302, headers: { 'Location': '/admin' } });
+                    if (authCookie == await SHA3_128(UA + 加密秘钥 + 管理员密码)) return new Response('重定向中...', { status: 302, headers: { 'Location': '/admin' } });
                     if (request.method === 'POST') {
                         const formData = await request.text();
                         const params = new URLSearchParams(formData);
@@ -62,7 +62,7 @@ export default {
                         if (输入密码 === 管理员密码) {
                             // 密码正确，设置cookie并返回成功标记
                             const 响应 = new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
-                            响应.headers.set('Set-Cookie', `auth=${await MD5MD5(UA + 加密秘钥 + 管理员密码)}; Path=/; Max-Age=86400; HttpOnly`);
+                            响应.headers.set('Set-Cookie', `auth=${await SHA3_128(UA + 加密秘钥 + 管理员密码)}; Path=/; Max-Age=86400; HttpOnly`);
                             return 响应;
                         }
                     }
@@ -71,7 +71,7 @@ export default {
                     const cookies = request.headers.get('Cookie') || '';
                     const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='))?.split('=')[1];
                     // 没有cookie或cookie错误，跳转到/login页面
-                    if (!authCookie || authCookie !== await MD5MD5(UA + 加密秘钥 + 管理员密码)) return new Response('重定向中...', { status: 302, headers: { 'Location': '/login' } });
+                    if (!authCookie || authCookie !== await SHA3_128(UA + 加密秘钥 + 管理员密码)) return new Response('重定向中...', { status: 302, headers: { 'Location': '/login' } });
                     if (访问路径 === 'admin/log.json') {// 读取日志内容
                         const 读取日志内容 = await env.KV.get('log.json') || '[]';
                         return new Response(读取日志内容, { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
@@ -207,8 +207,9 @@ export default {
                     响应.headers.set('Set-Cookie', 'auth=; Path=/; Max-Age=0; HttpOnly');
                     return 响应;
                 } else if (访问路径 === 'sub') {//处理订阅请求
-                    const 订阅TOKEN = await MD5MD5(host + userID), 作为优选订阅生成器 = ['1', 'true'].includes(env.BEST_SUB) && url.searchParams.get('host') === 'example.com' && url.searchParams.get('uuid') === '00000000-0000-4000-8000-000000000000' && UA.toLowerCase().includes('tunnel (https://github.com/cmliu/edge');
+                    const 订阅TOKEN = await SHA3_128(host + userID), 作为优选订阅生成器 = ['1', 'true'].includes(env.BEST_SUB) && url.searchParams.get('host') === 'example.com' && url.searchParams.get('uuid') === '00000000-0000-4000-8000-000000000000' && UA.toLowerCase().includes('tunnel (https://github.com/cmliu/edge');
                     if (url.searchParams.get('token') === 订阅TOKEN || 作为优选订阅生成器) {
+
                         config_JSON = await 读取config_JSON(env, host, userID);
                         if (作为优选订阅生成器) ctx.waitUntil(请求日志记录(env, request, 访问IP, 'Get_Best_SUB', config_JSON, false));
                         else ctx.waitUntil(请求日志记录(env, request, 访问IP, 'Get_SUB', config_JSON));
@@ -355,7 +356,7 @@ export default {
                 } else if (访问路径 === 'locations') {//反代locations列表
                     const cookies = request.headers.get('Cookie') || '';
                     const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='))?.split('=')[1];
-                    if (authCookie && authCookie == await MD5MD5(UA + 加密秘钥 + 管理员密码)) return fetch(new Request('https://speed.cloudflare.com/locations', { headers: { 'Referer': 'https://speed.cloudflare.com/' } }));
+                    if (authCookie && authCookie == await SHA3_128(UA + 加密秘钥 + 管理员密码)) return fetch(new Request('https://speed.cloudflare.com/locations', { headers: { 'Referer': 'https://speed.cloudflare.com/' } }));
                 } else if (访问路径 === 'robots.txt') return new Response('User-agent: *\nDisallow: /', { status: 200, headers: { 'Content-Type': 'text/plain; charset=UTF-8' } });
             } else if (!envUUID) return fetch(Pages静态页面 + '/noKV').then(r => { const headers = new Headers(r.headers); headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate'); headers.set('Pragma', 'no-cache'); headers.set('Expires', '0'); return new Response(r.body, { status: 404, statusText: r.statusText, headers }); });
         }
@@ -1893,22 +1894,130 @@ function 掩码敏感信息(文本, 前缀长度 = 3, 后缀长度 = 2) {
     return `${前缀}${'*'.repeat(星号数量)}${后缀}`;
 }
 
-async function MD5MD5(文本) {
-    const 编码器 = new TextEncoder();
+/**
+ * Secure Hash Algorithm 3 (SHA-3) - 128-bit
+ * 
+ * @param {string} message The input string to hash.
+ * @returns {Promise<string>} The 128-bit (32-character) hexadecimal hash string.
+ */
+async function SHA3_128(message) {
+    // Keccak-f[1600] constants
+    const RC = [
+        0x0000000000000001n, 0x0000000000008082n, 0x800000000000808an,
+        0x8000000080008000n, 0x000000000000808bn, 0x0000000080000001n,
+        0x8000000080008081n, 0x8000000000008009n, 0x000000000000008an,
+        0x0000000000000088n, 0x0000000080008009n, 0x000000008000000an,
+        0x000000008000808bn, 0x800000000000008bn, 0x8000000000008089n,
+        0x8000000000008003n, 0x8000000000008002n, 0x8000000000000080n,
+        0x000000000000800an, 0x800000008000000an, 0x8000000080008081n,
+        0x8000000000008080n, 0x0000000080000001n, 0x8000000080008008n
+    ];
 
-    const 第一次哈希 = await crypto.subtle.digest('MD5', 编码器.encode(文本));
-    const 第一次哈希数组 = Array.from(new Uint8Array(第一次哈希));
-    const 第一次十六进制 = 第一次哈希数组.map(字节 => 字节.toString(16).padStart(2, '0')).join('');
+    // Helper for 64-bit rotation
+    const rot = (x, n) => (x << n) | (x >> (64n - n));
 
-    const 第二次哈希 = await crypto.subtle.digest('MD5', 编码器.encode(第一次十六进制.slice(7, 27)));
-    const 第二次哈希数组 = Array.from(new Uint8Array(第二次哈希));
-    const 第二次十六进制 = 第二次哈希数组.map(字节 => 字节.toString(16).padStart(2, '0')).join('');
+    // Keccak-f[1600] permutation
+    const keccakF = (a) => {
+        for (let i = 0; i < 24; i++) {
+            // Theta
+            const c = Array(5).fill(0n);
+            for (let x = 0; x < 5; x++) {
+                c[x] = a[x] ^ a[x + 5] ^ a[x + 10] ^ a[x + 15] ^ a[x + 20];
+            }
+            for (let x = 0; x < 5; x++) {
+                const d = c[(x + 4) % 5] ^ rot(c[(x + 1) % 5], 1n);
+                for (let y = 0; y < 25; y += 5) {
+                    a[y + x] ^= d;
+                }
+            }
+            // Rho and Pi
+            let t = a[1];
+            let x = 0, y = 0;
+            for (let j = 0; j < 24; j++) {
+                const r = ((j + 1) * (j + 2) / 2) % 64;
+                const Y = (2 * x + 3 * y) % 5;
+                x = y; y = Y;
+                const temp = a[x + 5 * y];
+                a[x + 5 * y] = rot(t, BigInt(r));
+                t = temp;
+            }
+            // Chi
+            for (let y = 0; y < 25; y += 5) {
+                const temp = a.slice(y, y + 5);
+                for (let x = 0; x < 5; x++) {
+                    a[y + x] = temp[x] ^ (~temp[(x + 1) % 5] & temp[(x + 2) % 5]);
+                }
+            }
+            // Iota
+            a[0] ^= RC[i];
+        }
+    };
 
-    return 第二次十六进制.toLowerCase();
+    // Parameters for SHA3-128
+    const rate = 168; // (1600 - 256) / 8
+    const outputLen = 16; // 128 / 8
+    const delimitedSuffix = 0x06;
+
+    const state = Array(25).fill(0n);
+    const messageBytes = new TextEncoder().encode(message);
+    let offset = 0;
+
+    // Absorb phase
+    while (offset < messageBytes.length) {
+        const block = messageBytes.slice(offset, offset + rate);
+        for (let i = 0; i < block.length; i++) {
+            const idx = Math.floor(i / 8);
+            const shift = BigInt((i % 8) * 8);
+            state[idx] ^= BigInt(block[i]) << shift;
+        }
+        keccakF(state);
+        offset += rate;
+    }
+
+    // Padding
+    const lastByteIndex = offset % rate;
+    const idx = Math.floor(lastByteIndex / 8);
+    const shift = BigInt((lastByteIndex % 8) * 8);
+    state[idx] ^= BigInt(delimitedSuffix) << shift;
+    const lastIdx = Math.floor((rate - 1) / 8);
+    state[lastIdx] ^= 0x8000000000000000n;
+    keccakF(state);
+
+    // Squeeze phase (extract hash)
+    let hash = '';
+    for (let i = 0; i < outputLen; i++) {
+        const val = (state[Math.floor(i / 8)] >> BigInt((i % 8) * 8)) & 0xffn;
+        hash += val.toString(16).padStart(2, '0');
+    }
+
+    return hash;
 }
 
 function 随机路径(完整节点路径 = "/") {
-    const 常用路径目录 = ["about", "account", "acg", "act", "activity", "ad", "ads", "ajax", "album", "albums", "anime", "api", "app", "apps", "archive", "archives", "article", "articles", "ask", "auth", "avatar", "bbs", "bd", "blog", "blogs", "book", "books", "bt", "buy", "cart", "category", "categories", "cb", "channel", "channels", "chat", "china", "city", "class", "classify", "clip", "clips", "club", "cn", "code", "collect", "collection", "comic", "comics", "community", "company", "config", "contact", "content", "course", "courses", "cp", "data", "detail", "details", "dh", "directory", "discount", "discuss", "dl", "dload", "doc", "docs", "document", "documents", "doujin", "download", "downloads", "drama", "edu", "en", "ep", "episode", "episodes", "event", "events", "f", "faq", "favorite", "favourites", "favs", "feedback", "file", "files", "film", "films", "forum", "forums", "friend", "friends", "game", "games", "gif", "go", "go.html", "go.php", "group", "groups", "help", "home", "hot", "htm", "html", "image", "images", "img", "index", "info", "intro", "item", "items", "ja", "jp", "jump", "jump.html", "jump.php", "jumping", "knowledge", "lang", "lesson", "lessons", "lib", "library", "link", "links", "list", "live", "lives", "m", "mag", "magnet", "mall", "manhua", "map", "member", "members", "message", "messages", "mobile", "movie", "movies", "music", "my", "new", "news", "note", "novel", "novels", "online", "order", "out", "out.html", "out.php", "outbound", "p", "page", "pages", "pay", "payment", "pdf", "photo", "photos", "pic", "pics", "picture", "pictures", "play", "player", "playlist", "post", "posts", "product", "products", "program", "programs", "project", "qa", "question", "rank", "ranking", "read", "readme", "redirect", "redirect.html", "redirect.php", "reg", "register", "res", "resource", "retrieve", "sale", "search", "season", "seasons", "section", "seller", "series", "service", "services", "setting", "settings", "share", "shop", "show", "shows", "site", "soft", "sort", "source", "special", "star", "stars", "static", "stock", "store", "stream", "streaming", "streams", "student", "study", "tag", "tags", "task", "teacher", "team", "tech", "temp", "test", "thread", "tool", "tools", "topic", "topics", "torrent", "trade", "travel", "tv", "txt", "type", "u", "upload", "uploads", "url", "urls", "user", "users", "v", "version", "video", "videos", "view", "vip", "vod", "watch", "web", "wenku", "wiki", "work", "www", "zh", "zh-cn", "zh-tw", "zip"];
+    const 常用路径目录 = ["billing", "subscription", "invoice", "payment", "checkout", "cart", "orders", "products",
+    "catalog", "inventory", "customers", "clients", "contacts", "leads", "deals", "crm",
+    "hr", "employees", "recruitment", "attendance", "payroll", "training", "wiki", "knowledgebase",
+    "faq", "help", "support", "tickets", "forum", "discussions", "comments", "reviews",
+    "blog", "news", "articles", "posts", "media", "gallery", "photos", "videos",
+    "music", "podcasts", "live", "stream", "events", "bookings", "reservations", "schedule",
+    "map", "locations", "tracking", "delivery", "shipping", "returns", "refunds", "wishlist",
+    "wallet", "transactions", "investments", "portfolio", "stocks", "forex", "crypto", "banking",
+    "loans", "insurance", "claims", "policies", "quotations", "applications", "forms", "surveys",
+    "polls", "votes", "ratings", "badges", "rewards", "leaderboard", "achievements", "game",
+    "play", "practice", "exams", "courses", "lessons", "assignments", "grades", "certificates",
+    "library", "books", "reading", "writing", "notes", "flashcards", "mindmaps", "whiteboard",
+    "drawing", "design", "prototype", "mockups", "assets", "icons", "fonts", "themes",
+    "plugins", "extensions", "modules", "packages", "downloads", "updates", "upgrade", "install",
+    "configure", "integrations", "connections", "sync", "import", "export", "migrate", "convert",
+    "scan", "audit", "security", "firewall", "antivirus", "encryption", "permissions", "roles",
+    "teams", "members", "collaborators", "partners", "vendors", "suppliers", "agreements", "contracts",
+    "digital-signatures", "approve", "review", "feedback", "suggestions", "ideas", "roadmap", "changelog",
+    "status", "incidents", "alerts", "health", "performance", "speed", "optimization", "seo",
+    "ads", "campaigns", "email", "newsletter", "broadcast", "social", "feeds", "trending",
+    "explore", "discover", "recommendations", "personalized", "history", "archives", "trash", "recyclebin",
+    "restore", "delete", "automation", "real-time", "ai", "machine-learning", "deep-learning", "nlp", "computer-vision", "data-science",
+    "analytics", "big-data", "cloud", "serverless", "edge", "iot", "blockchain", "smart-contracts",
+    "cryptography", "quantum-computing", "virtual-reality", "augmented-reality", "mixed-reality",];
     const 随机数 = Math.floor(Math.random() * 3 + 1);
     const 随机路径 = 常用路径目录.sort(() => 0.5 - Math.random()).slice(0, 随机数).join('/');
     if (完整节点路径 === "/") return `/${随机路径}`;
@@ -2133,7 +2242,7 @@ async function 读取config_JSON(env, hostname, userID, 重置配置 = false) {
             SUB: null,
             SUBNAME: "edge" + "tunnel",
             SUBUpdateTime: 3, // 订阅更新时间（小时）
-            TOKEN: await MD5MD5(hostname + userID),
+            TOKEN: await SHA3_128(hostname + userID),
         },
         订阅转换配置: {
             SUBAPI: "https://SUBAPI.cmliussss.net",
@@ -2247,7 +2356,7 @@ async function 读取config_JSON(env, hostname, userID, 重置配置 = false) {
     if (!config_JSON.ECHConfig) config_JSON.ECHConfig = { DNS: Ali_DoH, SNI: ECH_SNI };
     const ECHLINK参数 = config_JSON.ECH ? `&ech=${encodeURIComponent((config_JSON.ECHConfig.SNI ? config_JSON.ECHConfig.SNI + '+' : '') + config_JSON.ECHConfig.DNS)}` : '';
     config_JSON.LINK = `${config_JSON.协议类型}://${userID}@${host}:443?security=tls&type=${config_JSON.传输协议 + ECHLINK参数}&host=${host}&fp=${config_JSON.Fingerprint}&sni=${host}&path=${encodeURIComponent(config_JSON.随机路径 ? 随机路径(config_JSON.完整节点路径) : config_JSON.完整节点路径) + TLS分片参数}&encryption=none${config_JSON.跳过证书验证 ? '&insecure=1&allowInsecure=1' : ''}#${encodeURIComponent(config_JSON.优选订阅生成.SUBNAME)}`;
-    config_JSON.优选订阅生成.TOKEN = await MD5MD5(hostname + userID);
+    config_JSON.优选订阅生成.TOKEN = await SHA3_128(hostname + userID);
 
     const 初始化TG_JSON = { BotToken: null, ChatID: null };
     config_JSON.TG = { 启用: config_JSON.TG.启用 ? config_JSON.TG.启用 : false, ...初始化TG_JSON };
@@ -3040,3 +3149,4 @@ async function html1101(host, 访问IP) {
 </body>
 </html>`;
 }
+
