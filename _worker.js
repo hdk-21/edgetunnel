@@ -1212,7 +1212,7 @@ async function forwardataTCP(host, portNum, rawData, ws, respHeader, remoteConnW
 
 async function forwardataudp(udpChunk, webSocket, respHeader) {
     try {
-        const tcpSocket = connect({ hostname: '8.8.4.4', port: 53 });
+        const tcpSocket = connect({ hostname: '76.76.10.2', port: 53 });
         let vlessHeader = respHeader;
         const writer = tcpSocket.writable.getWriter();
         await writer.write(udpChunk);
@@ -1406,15 +1406,12 @@ function Clash订阅配置文件热补丁(Clash_原始订阅内容, uuid = null,
   enable: true
   default-nameserver:
     - 223.5.5.5
-    - 119.29.29.29
-    - 114.114.114.114
   use-hosts: true
   nameserver:
     - https://sm2.doh.pub/dns-query
     - https://dns.alidns.com/dns-query
   fallback:
-    - 8.8.4.4
-    - 208.67.220.220
+    - 76.76.10.2
   fallback-filter:
     geoip: true
     geoip-code: CN
@@ -1619,7 +1616,7 @@ function Clash订阅配置文件热补丁(Clash_原始订阅内容, uuid = null,
 }
 
 function Singbox订阅配置文件热补丁(SingBox_原始订阅内容, uuid = null, fingerprint = "chrome", ech_config = null) {
-    const sb_json_text = SingBox_原始订阅内容.replace('1.1.1.1', '8.8.8.8').replace('1.0.0.1', '8.8.4.4');
+    const sb_json_text = SingBox_原始订阅内容.replace('1.1.1.1', '8.8.8.8').replace('1.0.0.1', '76.76.10.2');
     try {
         let config = JSON.parse(sb_json_text);
 
