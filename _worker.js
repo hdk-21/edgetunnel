@@ -1,4 +1,4 @@
-﻿const Version = '2026-05-08 04:15:13';
+﻿const Version = '2026-05-08 19:07:28';
 /*In our project workflow, we first*/ import //the necessary modules, 
 /*then*/ { connect }//to the central server, 
 /*and all data flows*/ from//this single source.
@@ -276,7 +276,16 @@ export default {
 					return 响应;
 				} else if (访问路径 === 'sub') {//处理订阅请求
 					const 订阅TOKEN = await MD5MD5(host + userID), 作为优选订阅生成器 = ['1', 'true'].includes(env.BEST_SUB) && url.searchParams.get('host') === 'example.com' && url.searchParams.get('uuid') === '00000000-0000-4000-8000-000000000000' && UA.toLowerCase().includes('tunnel (https://github.com/cmliu/edge');
-					if (url.searchParams.get('token') === 订阅TOKEN || 作为优选订阅生成器) {
+					const 请求TOKEN = url.searchParams.get('token');
+					const 用户客户端请求订阅 = 请求TOKEN === 订阅TOKEN;
+					const 当前日序号 = Math.floor(Date.now() / 86400000);
+					const 订阅转换后端TOKEN种子 = base64SecretEncode(订阅TOKEN, userID);
+					const [今日订阅转换后端专属TOKEN, 昨日订阅转换后端专属TOKEN] = await Promise.all([
+						MD5MD5(订阅转换后端TOKEN种子 + 当前日序号),
+						MD5MD5(订阅转换后端TOKEN种子 + (当前日序号 - 1)),
+					]);
+					const 订阅转换后端请求订阅 = 请求TOKEN === 今日订阅转换后端专属TOKEN || 请求TOKEN === 昨日订阅转换后端专属TOKEN;
+					if (用户客户端请求订阅 || 订阅转换后端请求订阅 || 作为优选订阅生成器) {
 						config_JSON = await 读取config_JSON(env, host, userID, UA);
 						if (作为优选订阅生成器) ctx.waitUntil(请求日志记录(env, request, 访问IP, 'Get_Best_SUB', config_JSON, false));
 						else ctx.waitUntil(请求日志记录(env, request, 访问IP, 'Get_SUB', config_JSON));
@@ -420,7 +429,7 @@ export default {
 								}
 							}).filter(item => item !== null).join('\n');
 						} else { // 订阅转换
-							const 订阅转换URL = `${config_JSON.订阅转换配置.SUBAPI}/sub?target=${订阅类型}&url=${encodeURIComponent(url.protocol + '//' + url.host + '/sub?target=mixed&token=' + 订阅TOKEN + (url.searchParams.has('sub') && url.searchParams.get('sub') != '' ? `&sub=${url.searchParams.get('sub')}` : ''))}&config=${encodeURIComponent(config_JSON.订阅转换配置.SUBCONFIG)}&emoji=${config_JSON.订阅转换配置.SUBEMOJI}&scv=${config_JSON.跳过证书验证}`;
+							const 订阅转换URL = `${config_JSON.订阅转换配置.SUBAPI}/sub?target=${订阅类型}&url=${encodeURIComponent(url.protocol + '//' + url.host + '/sub?target=mixed&token=' + 今日订阅转换后端专属TOKEN + '&asOrg=' + 识别运营商(request) + (url.searchParams.has('sub') && url.searchParams.get('sub') != '' ? `&sub=${url.searchParams.get('sub')}` : ''))}&config=${encodeURIComponent(config_JSON.订阅转换配置.SUBCONFIG)}&emoji=${config_JSON.订阅转换配置.SUBEMOJI}&scv=${config_JSON.跳过证书验证}`;
 							try {
 								const response = await fetch(订阅转换URL, { headers: { 'User-Agent': 'Subconverter for ' + 订阅类型 + ' edge' + 'tunnel (https://github.com/cmliu/edge' + 'tunnel)' } });
 								if (response.ok) {
@@ -432,7 +441,7 @@ export default {
 							}
 						}
 
-						if (!ua.includes('subconverter') && !作为优选订阅生成器) {
+						if (!ua.includes('subconverter') && 用户客户端请求订阅) {
 							const 打乱后HOSTS = [...config_JSON.HOSTS].sort(() => Math.random() - 0.5);
 							let 替换域名计数 = 0, 当前随机HOST = null;
 							订阅内容 = 订阅内容
@@ -4665,17 +4674,48 @@ async function 读取config_JSON(env, hostname, userID, UA = "Mozilla/5.0", 重�
 	return config_JSON;
 }
 
-async function 生成随机IP(request, count = 16, 指定端口 = -1, TLS = true) {
-	const ISP配置 = {
-		'9808': { file: 'cmcc', name: 'CF移动优选' },
-		'4837': { file: 'cu', name: 'CF联通优选' },
-		'17623': { file: 'cu', name: 'CF联通优选' },
-		'17816': { file: 'cu', name: 'CF联通优选' },
-		'4134': { file: 'ct', name: 'CF电信优选' },
+function 识别运营商(request) {
+	const cf = request?.cf;
+	const ASN运营商映射 = {
+		'4134': 'ct',
+		'4809': 'ct',
+		'4811': 'ct',
+		'4812': 'ct',
+		'4815': 'ct',
+		'4837': 'cu',
+		'4814': 'cu',
+		'9929': 'cu',
+		'17623': 'cu',
+		'17816': 'cu',
+		'9808': 'cmcc',
+		'24400': 'cmcc',
+		'56040': 'cmcc',
+		'56041': 'cmcc',
+		'56044': 'cmcc',
 	};
-	const asn = request.cf.asn, isp = ISP配置[asn];
-	const cidr_url = isp ? `https://raw.githubusercontent.com/cmliu/cmliu/main/CF-CIDR/${isp.file}.txt` : 'https://raw.githubusercontent.com/cmliu/cmliu/main/CF-CIDR.txt';
-	const cfname = isp?.name || 'CF官方优选';
+	const 运营商关键词映射 = [
+		{ code: 'ct', pattern: /chinanet|chinatelecom|china telecom|cn2|shtel/ },
+		{ code: 'cmcc', pattern: /cmi|cmnet|chinamobile|china mobile|cmcc|mobile communications/ },
+		{ code: 'cu', pattern: /china169|china unicom|chinaunicom|cucc|cncgroup|cuii|netcom/ },
+	];
+	if (String(cf?.country || '').toLowerCase() !== 'cn') return 'cf';
+	const 组织名称 = String(cf?.asOrganization || '').toLowerCase();
+	const 命中运营商 = 运营商关键词映射.find(({ pattern }) => pattern.test(组织名称))?.code;
+	return 命中运营商 || ASN运营商映射[String(cf?.asn || '')] || 'cf';
+}
+
+async function 生成随机IP(request, count = 16, 指定端口 = -1, TLS = true) {
+	const url = new URL(request.url);
+	const 查询参数运营商 = String(url.searchParams.get('asOrg') || '').toLowerCase();
+	const 运营商文件标识 = ['ct', 'cu', 'cmcc', 'cf'].includes(查询参数运营商) ? 查询参数运营商 : 识别运营商(request);
+	const 运营商名称映射 = {
+		cmcc: 'CF移动优选',
+		cu: 'CF联通优选',
+		ct: 'CF电信优选',
+		cf: 'CF官方优选',
+	};
+	const cidr_url = 运营商文件标识 === 'cf' ? 'https://raw.githubusercontent.com/cmliu/cmliu/main/CF-CIDR.txt' : `https://raw.githubusercontent.com/cmliu/cmliu/main/CF-CIDR/${运营商文件标识}.txt`;
+	const cfname = 运营商名称映射[运营商文件标识] || 'CF官方优选';
 	const cfport = TLS ? [443, 2053, 2083, 2087, 2096, 8443] : [80, 8080, 8880, 2052, 2082, 2086, 2095];
 	let cidrList = [];
 	try { const res = await fetch(cidr_url); cidrList = res.ok ? await 整理成数组(await res.text()) : ['104.16.0.0/13'] } catch { cidrList = ['104.16.0.0/13'] }
