@@ -5,12 +5,12 @@ permissions:
   pull-requests: write
 
 on:
-  pull_request_target:
-    # 只在新建、重新打开、草稿转正式时检查 PR 说明
-    types:
-      - opened
-      - reopened
-      - ready_for_review
+  # pull_request_target:
+  #   # 只在新建、重新打开、草稿转正式时检查 PR 说明
+  #   types:
+  #     - opened
+  #     - reopened
+  #     - ready_for_review
 
 jobs:
   check-pr:
