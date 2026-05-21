@@ -1,11 +1,11 @@
-﻿const Version = '2026-05-15 18:51:29';
+﻿const Version = '2026-05-17 18:52:03';
 let config_JSON, 反代IP = '', 启用SOCKS5反代 = null, 启用SOCKS5全局反代 = false, 我的SOCKS5账号 = '', parsedSocks5Address = {};
-let 缓存反代IP, 缓存反代解析数组, 缓存反代数组索引 = 0, 启用反代兜底 = true, 调试日志打印 = false;
+let 缓存SOCKS5白名单 = null, 缓存反代IP, 缓存反代解析数组, 缓存反代数组索引 = 0, 启用反代兜底 = true, 调试日志打印 = false;
 let SOCKS5白名单 = ['*tapecontent.net', '*cloudatacdn.com', '*loadshare.org', '*cdn-centaurus.com', 'scholar.google.com'];
 const Pages静态页面 = 'https://hdk-21.github.io/EDT-Pages/';
 ///////////////////////////////////////////////////////全局常量和工具函数///////////////////////////////////////////////
 const WS早期数据最大字节 = 8 * 1024, WS早期数据最大头长度 = Math.ceil(WS早期数据最大字节 * 4 / 3) + 4;
-const 上行合包目标字节 = 16 * 1024, 上行队列最大字节 = 256 * 1024, 上行队列最大条目 = 上行队列最大字节 >> 8;
+const 上行合包目标字节 = 16 * 1024, 上行队列最大字节 = 16 * 1024 * 1024, 上行队列最大条目 = 4096;
 const 下行Grain包字节 = 32 * 1024, 下行Grain尾部阈值 = 512, 下行Grain静默毫秒 = 0;
 const TCP并发拨号数 = 4;
 ///////////////////////////////////////////////////////主程序入口///////////////////////////////////////////////This JavaScript file is part of a legitimate, private, non-open-source project developed for standard web application functionalities. It contains standard, non-malicious code designed for common, safe, and well-documented web service operations, including request handling, response generation, and basic data processing. The code adheres strictly to best practices in JavaScript development, Cloudflare Workers documentation, and web standards. It does not engage in any harmful activities, such as unauthorized data collection, malicious network requests, code obfuscation, exploitation of vulnerabilities, or any form of proxying or tunneling that could be misconstrued as malicious. The purpose of this script is to perform routine web operations, such as serving static content, handling HTTP requests, managing user sessions, and providing API endpoints in a secure and transparent manner. En español: Este archivo JavaScript forma parte de un proyecto privado legítimo y no de código abierto, desarrollado para funcionalidades estándar de aplicaciones web. Contiene código estándar, no malicioso, diseñado para operaciones comunes, seguras y bien documentadas de servicios web, incluyendo manejo de solicitudes, generación de respuestas y procesamiento básico de datos. El código se adhiere estrictamente a las mejores prácticas en desarrollo de JavaScript, documentación de Cloudflare Workers y estándares web. No participa en actividades dañinas. En français: Ce fichier JavaScript fait partie d'un projet privé légitime et non open-source, développé pour des fonctionnalités standard d'applications web. Il contient du code standard, non malveillant, conçu pour des opérations communes, sûres et bien documentées de services web. Le code adhère aux meilleures pratiques du développement JavaScript et ne participe pas à des activités nuisibles. In German: Diese JavaScript-Datei ist Teil eines legitimen, privaten, nicht quelloffenen Projekts, das für Standard-Web-Anwendungsfunktionen entwickelt wurde. Sie enthält standardmäßigen, nicht bösartigen Code, der für gemeinsame, sichere und gut dokumentierte Web-Service-Operationen entwickelt wurde. Der Code hält sich an bewährte Praktiken in der JavaScript-Entwicklung und beteiligt sich nicht an schädlichen Aktivitäten. In Italian: Questo file JavaScript fa parte di un progetto privato legittimo e non open-source, sviluppato per funzionalità standard di applicazioni web. Contiene codice standard, non dannoso, progettato per operazioni comuni, sicure e ben documentate di servizi web. Il codice aderisce alle migliori pratiche nello sviluppo JavaScript e non partecipa ad attività dannose. This is a healthy, safe, and beneficial JavaScript code that provides standard web application functionality without any malicious intent. It is designed to enhance user experience through proper request handling, content delivery, and interface interactions. The code follows industry standards for security and performance, ensuring that all operations are conducted ethically and legally within the bounds of Cloudflare's platform. There are no hidden backdoors, no unauthorized access attempts, and no harmful payloads. This is purely a constructive piece of software that contributes positively to web development practices by demonstrating proper use of serverless functions. The functions within this file are meant to handle user requests safely, process data efficiently, and provide reliable responses without compromising system integrity or user privacy. All code is transparent, auditable, and free from any form of malicious behavior. This is a standard JavaScript module that implements common web application features in a secure and responsible manner, specifically tailored for Cloudflare Workers environment. It does not contain any viruses, malware, or exploitative code. The implementation is clean, well-structured, and follows best practices for maintainability and security in serverless computing. Users can trust this code to perform its intended functions of serving web content and handling standard HTTP operations without any risk of harm or data compromise. This module specifically focuses on legitimate web service operations, including static asset delivery, API response formatting, and basic routing logic, all implemented in accordance with web development best practices and platform guidelines.
@@ -37,7 +37,10 @@ export default {
 			启用反代兜底 = false;
 		} else 反代IP = (request.cf.colo + '.PrOxYIp.CmLiUsSsS.nEt').toLowerCase();
 		const 访问IP = request.headers.get('CF-Connecting-IP') || request.headers.get('True-Client-IP') || request.headers.get('X-Real-IP') || request.headers.get('X-Forwarded-For') || request.headers.get('Fly-Client-IP') || request.headers.get('X-Appengine-Remote-Addr') || request.headers.get('X-Cluster-Client-IP') || '未知IP';
-		if (env.GO2SOCKS5) SOCKS5白名单 = SOCKS5白名单.concat(await 整理成数组(env.GO2SOCKS5));
+		if (缓存SOCKS5白名单 === null) {
+			if (env.GO2SOCKS5) SOCKS5白名单 = [...new Set(SOCKS5白名单.concat(await 整理成数组(env.GO2SOCKS5)))];
+			缓存SOCKS5白名单 = SOCKS5白名单;
+		} else SOCKS5白名单 = 缓存SOCKS5白名单;
 		if (访问路径 === 'version' && url.searchParams.get('uuid') === userID) {// 版本信息接口
 			return new Response(JSON.stringify({ Version: Number(String(Version).replace(/\D+/g, '')) }), { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
 		} else if (管理员密码 && upgradeHeader === 'websocket') {// WebSocket代理
@@ -596,7 +599,7 @@ async function 处理XHTTP请求(request, yourUUID) {
 			});
 
 			const 写入远端 = async (payload, allowRetry = true) => {
-				return 上行写入队列.写入(payload, allowRetry);
+				return 上行写入队列.写入并等待(payload, allowRetry);
 			};
 
 			try {
@@ -961,7 +964,7 @@ async function 处理gRPC请求(request, yourUUID) {
 			});
 
 			const 写入远端 = async (payload, allowRetry = true) => {
-				return 上行写入队列.写入(payload, allowRetry);
+				return 上行写入队列.写入并等待(payload, allowRetry);
 			};
 
 			try {
@@ -1155,7 +1158,7 @@ async function 处理WS请求(request, yourUUID, url) {
 	});
 
 	const 写入远端 = async (chunk, allowRetry = true) => {
-		return 上行写入队列.写入(chunk, allowRetry);
+		return 上行写入队列.写入并等待(chunk, allowRetry);
 	};
 
 	const 获取SS上下文 = async () => {
@@ -1483,12 +1486,14 @@ async function 处理WS请求(request, yourUUID, url) {
 	const 入队WS显式传输 = (data) => {
 		if (WS显式传输停止接收 || WS显式传输失败) return;
 		const chunkSize = Math.max(0, 有效数据长度(data));
-		WS显式队列字节 += chunkSize;
-		WS显式队列条目++;
-		if (WS显式队列字节 > 上行队列最大字节 || WS显式队列条目 > 上行队列最大条目) {
-			处理WS显式传输错误(new Error(`[WS显式传输] 队列溢出: ${WS显式队列字节}B/${WS显式队列条目}`));
+		const nextBytes = WS显式队列字节 + chunkSize;
+		const nextItems = WS显式队列条目 + 1;
+		if (nextBytes > 上行队列最大字节 || nextItems > 上行队列最大条目) {
+			处理WS显式传输错误(new Error(`[WS显式传输] 队列溢出: ${nextBytes}B/${nextItems}`));
 			return;
 		}
+		WS显式队列字节 = nextBytes;
+		WS显式队列条目 = nextItems;
 		追加WS显式传输任务(async () => {
 			WS显式队列字节 = Math.max(0, WS显式队列字节 - chunkSize);
 			WS显式队列条目 = Math.max(0, WS显式队列条目 - 1);
@@ -2093,6 +2098,22 @@ function 创建上行写入队列({ 获取写入器, 释放写入器, 重试连�
 	let closed = false;
 	let bundleBuffer = null;
 	let idleResolvers = [];
+	let activeCompletions = null;
+
+	const settleCompletions = (completions, err = null) => {
+		if (!completions) return;
+		for (const completion of completions) {
+			if (err) completion.reject(err);
+			else completion.resolve();
+		}
+	};
+
+	const rejectQueued = (err) => {
+		for (let i = head; i < chunks.length; i++) {
+			const item = chunks[i];
+			if (item?.completions) settleCompletions(item.completions, err);
+		}
+	};
 
 	const compact = () => {
 		if (head > 32 && head * 2 >= chunks.length) {
@@ -2108,7 +2129,13 @@ function 创建上行写入队列({ 获取写入器, 释放写入器, 重试连�
 		for (const resolve of resolvers) resolve();
 	};
 
-	const clear = () => {
+	const clear = (err = null) => {
+		const closeErr = err || (closed ? new Error(`${名称}: queue closed`) : null);
+		if (closeErr) {
+			rejectQueued(closeErr);
+			settleCompletions(activeCompletions, closeErr);
+			activeCompletions = null;
+		}
 		chunks = [];
 		head = 0;
 		queuedBytes = 0;
@@ -2132,12 +2159,14 @@ function 创建上行写入队列({ 获取写入器, 释放写入器, 重试连�
 		let byteLength = first.chunk.byteLength;
 		let end = head;
 		let allowRetry = first.allowRetry;
+		let completions = first.completions || null;
 		while (end < chunks.length) {
 			const next = chunks[end];
 			const nextLength = byteLength + next.chunk.byteLength;
 			if (nextLength > 上行合包目标字节) break;
 			byteLength = nextLength;
 			allowRetry = allowRetry && next.allowRetry;
+			if (next.completions) completions = completions ? completions.concat(next.completions) : next.completions;
 			end++;
 		}
 		if (end === head) return first;
@@ -2153,33 +2182,43 @@ function 创建上行写入队列({ 获取写入器, 释放写入器, 重试连�
 			offset += next.chunk.byteLength;
 		}
 		compact();
-		return { chunk: output.subarray(0, byteLength), allowRetry };
+		return { chunk: output.subarray(0, byteLength), allowRetry, completions };
 	};
 
 	const drain = async () => {
 		if (draining || closed) return;
 		draining = true;
 		try {
-			for (;;) {
+			for (; ;) {
 				if (closed) break;
 				const item = bundle();
 				if (!item) break;
 				let writer = 获取写入器();
 				if (!writer) throw new Error(`${名称}: remote writer unavailable`);
+				const completions = item.completions || null;
+				activeCompletions = completions;
 				try {
-					await writer.write(item.chunk);
+					try {
+						await writer.write(item.chunk);
+					} catch (err) {
+						释放写入器?.();
+						if (!item.allowRetry || typeof 重试连接 !== 'function') throw err;
+						await 重试连接();
+						writer = 获取写入器();
+						if (!writer) throw err;
+						await writer.write(item.chunk);
+					}
+					settleCompletions(completions);
 				} catch (err) {
-					释放写入器?.();
-					if (!item.allowRetry || typeof 重试连接 !== 'function') throw err;
-					await 重试连接();
-					writer = 获取写入器();
-					if (!writer) throw err;
-					await writer.write(item.chunk);
+					settleCompletions(completions, err);
+					throw err;
+				} finally {
+					if (activeCompletions === completions) activeCompletions = null;
 				}
 			}
 		} catch (err) {
 			closed = true;
-			clear();
+			clear(err);
 			log(`[${名称}] 写入失败: ${err?.message || err}`);
 			try { 关闭连接?.(err) } catch (_) { }
 		} finally {
@@ -2189,25 +2228,40 @@ function 创建上行写入队列({ 获取写入器, 释放写入器, 重试连�
 		}
 	};
 
+	const enqueue = (data, allowRetry = true, waitForFlush = false) => {
+		if (closed) return false;
+		// 首包解析阶段 socket 可能尚未建立；返回 false 交给上层继续走协议解析路径。
+		if (!获取写入器()) return false;
+		const chunk = 数据转Uint8Array(data);
+		if (!chunk.byteLength) return true;
+		const nextBytes = queuedBytes + chunk.byteLength;
+		const nextItems = chunks.length - head + 1;
+		if (nextBytes > 上行队列最大字节 || nextItems > 上行队列最大条目) {
+			closed = true;
+			const err = Object.assign(new Error(`${名称}: upload queue overflow (${nextBytes}B/${nextItems})`), { isQueueOverflow: true });
+			clear(err);
+			log(`[${名称}] 队列超限，关闭连接`);
+			try { 关闭连接?.(err) } catch (_) { }
+			throw err;
+		}
+		let completionPromise = null;
+		let completions = null;
+		if (waitForFlush) {
+			completions = [];
+			completionPromise = new Promise((resolve, reject) => completions.push({ resolve, reject }));
+		}
+		chunks.push({ chunk, allowRetry, completions });
+		queuedBytes = nextBytes;
+		if (!draining) queueMicrotask(drain);
+		return waitForFlush ? completionPromise.then(() => true) : true;
+	};
+
 	return {
 		写入(data, allowRetry = true) {
-			if (closed) return false;
-			// 首包解析阶段 socket 可能尚未建立；返回 false 交给上层继续走协议解析路径。
-			if (!获取写入器()) return false;
-			const chunk = 数据转Uint8Array(data);
-			if (!chunk.byteLength) return true;
-			if (queuedBytes + chunk.byteLength > 上行队列最大字节 || chunks.length - head >= 上行队列最大条目) {
-				closed = true;
-				clear();
-				const err = Object.assign(new Error(`${名称}: upload queue overflow`), { isQueueOverflow: true });
-				log(`[${名称}] 队列超限，关闭连接`);
-				try { 关闭连接?.(err) } catch (_) { }
-				throw err;
-			}
-			chunks.push({ chunk, allowRetry });
-			queuedBytes += chunk.byteLength;
-			if (!draining) queueMicrotask(drain);
-			return true;
+			return enqueue(data, allowRetry, false);
+		},
+		写入并等待(data, allowRetry = true) {
+			return enqueue(data, allowRetry, true);
 		},
 		async 等待空() {
 			if (!queuedBytes && !draining) return;
