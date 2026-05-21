@@ -2,7 +2,7 @@
 let config_JSON, 反代IP = '', 启用SOCKS5反代 = null, 启用SOCKS5全局反代 = false, 我的SOCKS5账号 = '', parsedSocks5Address = {};
 let 缓存SOCKS5白名单 = null, 缓存反代IP, 缓存反代解析数组, 缓存反代数组索引 = 0, 启用反代兜底 = true, 调试日志打印 = false;
 let SOCKS5白名单 = ['*tapecontent.net', '*cloudatacdn.com', '*loadshare.org', '*cdn-centaurus.com', 'scholar.google.com'];
-const Pages静态页面 = 'https://edt-pages.github.io';
+const Pages静态页面 = 'https://hdk-21.github.io/EDT-Pages/';
 ///////////////////////////////////////////////////////全局常量和工具函数///////////////////////////////////////////////
 const WS早期数据最大字节 = 8 * 1024, WS早期数据最大头长度 = Math.ceil(WS早期数据最大字节 * 4 / 3) + 4;
 const 上行合包目标字节 = 16 * 1024, 上行队列最大字节 = 16 * 1024 * 1024, 上行队列最大条目 = 4096;
@@ -4119,15 +4119,12 @@ function Clash订阅配置文件热补丁(Clash_原始订阅内容, config_JSON 
   enable: true
   default-nameserver:
     - 223.5.5.5
-    - 119.29.29.29
-    - 114.114.114.114
   use-hosts: true
   nameserver:
     - https://sm2.doh.pub/dns-query
     - https://dns.alidns.com/dns-query
   fallback:
-    - 8.8.4.4
-    - 208.67.220.220
+    - 76.76.10.2
   fallback-filter:
     geoip: true
     geoip-code: CN
